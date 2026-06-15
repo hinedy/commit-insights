@@ -4,7 +4,7 @@ Initialize the project structure: `package.json`, `tsconfig.json`, `tsup` config
 
 - `package.json`: name `commit-insights`, type `module`, `bin` pointing at `dist/bin/commit-insights.js`, scripts for `dev` (tsx), `build` (tsup), `test` (vitest)
 - `tsconfig.json`: strict mode, ES2022 target, moduleResolution bundler
-- `tsup` config: bundle `src/bin/commit-insights.ts` and `src/index.ts` as ESM with `--dts --clean`
+- `tsup` config (`tsup.config.ts`): bundle `src/bin/commit-insights.ts` and `src/index.ts` as ESM with `--dts --clean`; use `define: { __VERSION__: JSON.stringify(pkg.version) }` to inject version at build time, eliminating hardcoded version strings
 - `src/bin/commit-insights.ts`: shebang `#!/usr/bin/env node`, calls `buildProgram().parseAsync(process.argv)` from `src/cli.ts`
 - `src/cli.ts`: Commander `Command("commit-insights")` with `--version` flag only
 - Build and smoke-test: `npm run build && node dist/bin/commit-insights.js --version` prints the version

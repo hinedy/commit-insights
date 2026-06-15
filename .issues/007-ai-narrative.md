@@ -10,8 +10,12 @@ Implement optional AI narrative summaries: `AIProvider` interface with Result re
 - `src/ai/prompts.ts`: `buildPrompt(stats, opts)` — single template (JSON in fenced code block), audience variants (manager/retro/resume/self), length control
 - `src/ai/narratives.ts`: `generateNarrative(provider, stats, opts?)` — orchestrates prompt building + provider call
 - `tests/ai/anthropic.test.ts`: `MockAgent` with `disableNetConnect()`, tests for 401/429/empty_response/success
+- **SDK strategy**: Official Anthropic + OpenAI SDKs as **optional peer dependencies** with dynamic `import()`. Clear install hint on missing SDK. Ollama uses raw `fetch`.
+- **No streaming**: spinner/progress line on stderr, single-shot response
+- **Response format**: plain text prose — split on `\n\n` into `<p>` tags; no markdown parsing
 - CLI: `--narrative` flag (explicit opt-in), `--narrative-audience`, `--narrative-length`, `--strict` (exit 1 on failure)
-- Graceful degradation: AI failure writes dashboard without narrative + stderr warning
+- **Graceful degradation**: AI failure writes dashboard **without narrative section entirely** (no placeholder) + stderr warning
+- **No retry logic**: fail fast, warn, move on
 
 ## Acceptance criteria
 

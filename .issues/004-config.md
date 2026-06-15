@@ -6,7 +6,12 @@ Implement the layered config system: default → repo config (`.commit-insights.
 - `src/config/merge.ts`: `deepMerge()` with `undefined`-skip, `mergeLayersWithProvenance()` tracking which layer set each key
 - `src/config/index.ts`: `loadEffectiveConfig()` — load all layers in order, validate each, deep-merge, return config + provenance
 - `src/commands/config.ts`: `commit-insights config` (pretty-print), `--json`, `--explain` (per-key provenance)
-- Config keys: `ai.provider`, `ai.model`, `ai.baseUrl`, `areas` (record of path→name), `ticketPattern`
+- Config keys: `ai.provider`, `ai.model`, `ai.baseUrl`, `areas` (record of path→name), `ticketPattern`, `ignorePaths` (string[], default `[]` — path-boundary matching, no globs)
+- Environment variables use **standard provider conventions** only:
+  - `OPENAI_API_KEY` for OpenAI
+  - `ANTHROPIC_API_KEY` for Anthropic
+  - `OLLAMA_HOST` for Ollama (default `http://localhost:11434`)
+  - No `COMMIT_INSIGHTS_*` prefixed env vars
 
 ## Acceptance criteria
 
@@ -15,7 +20,8 @@ Implement the layered config system: default → repo config (`.commit-insights.
 - [ ] CLI `--ai-model llama3` merges into `ai` sub-object without wiping `ai.provider`
 - [ ] Zod validation per layer — typo'd key fails with file-path in error message
 - [ ] `commit-insights config --explain` shows which layer set each key
-- [ ] Config values flow to analysis functions (ticketPattern to `extractTickets`, areas to `mapAreas`)
+- [ ] Config values flow to analysis functions (ticketPattern to `extractTickets`, areas to `mapAreasByFile`, ignorePaths to `mapAreasByFile`)
+- [ ] `ignorePaths` defaults to `[]` in Zod schema
 
 ## Blocked by
 

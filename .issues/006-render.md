@@ -95,8 +95,12 @@ generate.ts → extractCommits() → analyze → StatsPayload + Commit[]
 
 - `src/report/escape.ts`: `escapeHtml()` (5-character HTML escape) and `jsonForScript()` (escape `</script>`, U+2028, U+2029 in JSON)
 - `src/report/charts.ts`: shape aggregated data for Chart.js consumption (pre-computed, not raw)
-- Chart.js MIT-licensed UMD bundle vendored as npm dependency, inlined at build time
+- Chart.js MIT-licensed UMD bundle vendored as npm dependency, inlined via **pre-build script** (`scripts/vendor-chartjs.mjs`) that generates `src/report/templates/chartjs-bundle.generated.ts` with `export const CHART_JS = '...'`
+- Generated file is gitignored, rebuilt on every `npm run build` via `"prebuild"` script
 - No CDN references in default output (`--cdn-charts` opt-in flag if added later)
+- **Default output**: current working directory (CWD where command was run), not repo root; `--out` overrides
+- **Recent commits table**: hard limit of 200 rows, no pagination, sticky header, type badge pills
+- **Typography**: system font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`) for body; `ui-monospace, "SFMono-Regular", Consolas, monospace` for hashes, ticket IDs, and type badges
 
 ## Acceptance criteria
 

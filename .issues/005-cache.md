@@ -3,7 +3,9 @@
 Implement incremental SQLite cache at `.git/commit-insights/cache.db`. Store raw unfiltered commits. Fast path for linear history (`git merge-base --is-ancestor`), hash-set diff for rebase/force-push reconciliation. `--no-cache` flag to skip entirely. `--all` mode bypasses cache.
 
 - `src/storage/cache.ts`: SQLite schema (`commits` table, `meta` table), `syncCache()` with `isAncestor` gate, `reconcileFullHistory()` for rebase/force-push
-- Schema: `commits(hash PK, author_name, author_email, date, subject, body, extracted_at)`, `meta(key PK, value)` — rows for `last_head`, `cache_version`, `last_run_at`
+- Schema: `commits(hash PK, parents TEXT, author_name, author_email, date, subject, body, extracted_at)`, `meta(key PK, value)` — rows for `last_head`, `schema_version`, `last_run_at`
+- `parents` stored as space-separated hashes (same format as `%P` from `git log`)
+- **No migration support**: if `meta.schema_version` doesn't match the current code version, drop and rebuild the database from scratch
 - Fast path: `git log $last_head..HEAD` when `last_head` is ancestor of `HEAD`
 - Slow path: hash-only `git log HEAD` → set diff → `DELETE` orphans + `upsert` new via `git log --stdin`
 - `src/commands/cache.ts`: `commit-insights cache status` (row count, last run) and `cache clear`
