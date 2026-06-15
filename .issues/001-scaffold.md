@@ -1,0 +1,22 @@
+## What to build
+
+Initialize the project structure: `package.json`, `tsconfig.json`, `tsup` config, and a skeleton CLI that prints `--version`. The resulting `commit-insights` binary must run and pass a smoke test.
+
+- `package.json`: name `commit-insights`, type `module`, `bin` pointing at `dist/bin/commit-insights.js`, scripts for `dev` (tsx), `build` (tsup), `test` (vitest)
+- `tsconfig.json`: strict mode, ES2022 target, moduleResolution bundler
+- `tsup` config: bundle `src/bin/commit-insights.ts` and `src/index.ts` as ESM with `--dts --clean`
+- `src/bin/commit-insights.ts`: shebang `#!/usr/bin/env node`, calls `buildProgram().parseAsync(process.argv)` from `src/cli.ts`
+- `src/cli.ts`: Commander `Command("commit-insights")` with `--version` flag only
+- Build and smoke-test: `npm run build && node dist/bin/commit-insights.js --version` prints the version
+
+## Acceptance criteria
+
+- [ ] `npm run build` produces `dist/bin/commit-insights.js` with working shebang
+- [ ] `node dist/bin/commit-insights.js --version` prints the version from `package.json`
+- [ ] `npm run dev -- --version` works via tsx
+- [ ] `dist/` is gitignored
+- [ ] TypeScript strict mode compiles without errors
+
+## Blocked by
+
+None - can start immediately.
