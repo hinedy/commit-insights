@@ -102,22 +102,30 @@ generate.ts → extractCommits() → analyze → StatsPayload + Commit[]
 - **Recent commits table**: hard limit of 200 rows, no pagination, sticky header, type badge pills
 - **Typography**: system font stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`) for body; `ui-monospace, "SFMono-Regular", Consolas, monospace` for hashes, ticket IDs, and type badges
 
+## Behaviors (one RED→GREEN cycle each)
+
+| Cycle | Behavior | Detail |
+|-------|----------|--------|
+| 1 | escapeHtml escapes 5 chars | `"<script>\"&'"` → `"&lt;script&gt;&quot;&amp;&#x27;"` |
+| 2 | jsonForScript escapes `</script>` | String containing `</script>` → `<\/script>` in JSON output; U+2028, U+2029 also escaped |
+| 3 | Section functions produce HTML | All section functions called with fixture data → each returns non-empty string with expected HTML tags |
+| 4 | compose produces valid document | All sections assembled → output starts with `<!DOCTYPE html>`, contains Chart.js bundle CSS/JS, ends with `</html>` |
+| 5 | `render()` writes to CWD | Full data + `render()` → `dashboard.html` exists at CWD, non-empty, valid HTML |
+| 6 | `--out` writes custom path | `--out custom/report.html` → file written at that exact path |
+| 7 | Empty-state when no data | Zero commits → dashboard renders with "no commits found" placeholder, no charts |
+| 8 | Narrative: conditional render | `renderNarrativeBlock("text")` → non-empty; `renderNarrativeBlock(undefined)` → `""` |
+| 9 | Recent commits caps at 200 | 201 commits passed to `renderRecentCommits()` → exactly 200 `<tr>` rows |
+| 10 | Chart configs produce valid objects | Chart factory functions called with fixture aggregates → returns objects with `type`, `data`, `options` fields |
+
 ## Acceptance criteria
 
-- [ ] `commit-insights generate .` produces `dashboard.html` in current directory
-- [ ] Dashboard renders correctly when opened offline (no network requests)
-- [ ] Dark theme, clean typography, responsive layout
-- [ ] Date range, totals, and monthly timeline chart display correctly
-- [ ] Commit type breakdown chart shows feat/fix/chore/etc. counts with colored badges
-- [ ] Top tickets and top areas render (or empty-state if none)
-- [ ] Recent commits table shows last 200 commits max, scrollable with sticky header
-- [ ] AI narrative card appears only when content is provided
+- [ ] All 10 RED→GREEN cycles pass
 - [ ] `escapeHtml` prevents XSS — `<script>` in commit subject renders as text
-- [ ] `jsonForScript` prevents script-tag breakout — `</script>` in body is escaped
-- [ ] Dashboard size ~250-300KB (dominated by inlined Chart.js)
-- [ ] Print styles produce readable light-background output
-- [ ] `--out dashboard/custom.html` writes to specified path
+- [ ] `jsonForScript` prevents script-tag breakout
+- [ ] `commit-insights generate .` produces valid `dashboard.html` in current directory
+- [ ] Dashboard renders offline (no network requests)
+- [ ] `--out` writes to specified path
 
 ## Blocked by
 
-- 003-analysis
+- 003-analysis (needs `AnalysisResult` type, not full implementation)

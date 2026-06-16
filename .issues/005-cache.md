@@ -12,17 +12,25 @@ Implement incremental SQLite cache at `.git/commit-insights/cache.db`. Store raw
 - `--no-cache` flag on `generate` — skip cache, raw extract every time
 - `--all` mode — bypass cache, reconciliation every run
 
+## Behaviors (one RED→GREEN cycle each)
+
+| Cycle | Behavior | Detail |
+|-------|----------|--------|
+| 1 | Schema created on first run | `syncCache()` with new DB → `commits` and `meta` tables exist via `PRAGMA table_info` |
+| 2 | Insert + retrieve one commit | Repo with 1 commit → `syncCache()` returns `Commit[]` with length 1, all fields match originals |
+| 3 | Second run returns instantly | Same HEAD, second call → same commits returned, zero `git log` subprocess calls |
+| 4 | Fast path: linear new commit | Cache has HEAD at hash A, one new commit B added → only B extracted, A returned from cache |
+| 5 | Slow path: rebase | History rewritten (same tree, new hashes) → old orphan hashes deleted from DB, rewritten hashes inserted |
+| 6 | `--no-cache` bypasses DB | Flag on `syncCache()` → `extractCommits()` called fresh, DB not read or written |
+| 7 | `--all` reconciles all branch tips | Two branches with diverging commits → all branch-tip commits present in output |
+| 8 | `cache status` shows stats | After sync, run `cache status` command → prints row count + `last_run_at` timestamp |
+| 9 | `cache clear` drops DB | After sync, run `cache clear` → DB file deleted or all rows removed |
+| 10 | `git gc` doesn't break cache | Repo with cached commits, `git gc --prune=now`, then sync → cache still returns commits successfully |
+
 ## Acceptance criteria
 
-- [ ] First run extracts and caches all commits
-- [ ] Second run on same HEAD returns instantly (no re-extraction)
-- [ ] New commit added to linear history: only the new commit is extracted
-- [ ] Rebase/force-push: old orphan hashes are deleted, rewritten hashes are re-extracted
-- [ ] `git gc --prune=now` between runs doesn't break the cache
-- [ ] `commit-insights cache status` shows commit count and last run timestamp
-- [ ] `commit-insights cache clear` drops the database
-- [ ] `--no-cache` extracts all commits fresh without reading/writing cache
-- [ ] `--all` reconciles all branch tips (bypasses cache)
+- [ ] All 10 RED→GREEN cycles pass
+- [ ] Interface signatures match the approved design above
 
 ## Blocked by
 

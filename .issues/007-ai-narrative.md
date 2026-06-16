@@ -17,19 +17,39 @@ Implement optional AI narrative summaries: `AIProvider` interface with Result re
 - **Graceful degradation**: AI failure writes dashboard **without narrative section entirely** (no placeholder) + stderr warning
 - **No retry logic**: fail fast, warn, move on
 
+## Behaviors (one RED→GREEN cycle each)
+
+| Cycle | Behavior | Detail |
+|-------|----------|--------|
+| 1 | AIError class | `new AIError("auth", "bad key")` → `instanceof Error`, `.kind === "auth"`, `.message === "bad key"` |
+| 2 | AnthropicProvider: missing key | Constructor called without `ANTHROPIC_API_KEY` env → throws with message indicating missing key |
+| 3 | AnthropicProvider: 401 → auth | MockAgent returns 401 → `Result.error` with `.kind === "auth"` |
+| 4 | AnthropicProvider: 429 → rate_limit | MockAgent returns 429 → `Result.error` with `.kind === "rate_limit"` |
+| 5 | AnthropicProvider: success → text | MockAgent returns `{ content: [{ type: "text", text: "summary" }] }` → `Result.ok` with `.value.text === "summary"` |
+| 6 | AnthropicProvider: empty response | MockAgent returns `{ content: [] }` → `Result.error` with `.kind === "empty_response"` |
+| 7 | OllamaProvider: ECONNREFUSED | Connection refused → error message includes "is Ollama running?" |
+| 8 | OllamaProvider: 404 | MockAgent returns 404 → error message includes "try `ollama pull`" |
+| 9 | OllamaProvider: success → text | MockAgent returns `{ response: "summary" }` → `Result.ok` with `.value.text === "summary"` |
+| 10 | createProvider: valid config | `{ provider: "ollama", model: "llama3" }` with `OLLAMA_HOST` set → returns `{ provider, error: undefined }` |
+| 11 | createProvider: missing key | `{ provider: "anthropic" }` without `ANTHROPIC_API_KEY` → returns `{ provider: undefined, error }` |
+| 12 | buildPrompt: no raw commits | Payload `StatsPayload` contains only aggregates → no commit messages, hashes, or diffs in prompt string |
+| 13 | buildPrompt: audience variants differ | `resume` variant contains different framing than `manager` variant for the same stats |
+| 14 | generateNarrative: success | Provider returns text → `generateNarrative()` returns that text string |
+| 15 | generateNarrative: failure → null | Provider returns error → `generateNarrative()` returns `null` |
+| 16 | `--narrative` without provider | CLI with `--narrative`, no provider configured → stderr warning, exit 0 |
+| 17 | `--strict` + AI failure → exit 1 | CLI with `--narrative --strict`, provider fails → exit code 1 |
+| 18 | Dashboard without narrative on failure | Full `generate` run, AI fails → `dashboard.html` exists, does NOT contain narrative section |
+
 ## Acceptance criteria
 
-- [ ] `--narrative` without a configured provider shows a clear error message
-- [ ] Anthropic provider: 401 → auth error, 429 → rate_limit, tool_use-only response → empty_response, valid text → success
-- [ ] OpenAI provider: same error classification pattern
-- [ ] Ollama provider: ECONNREFUSED → "is Ollama running?", 404 → "try `ollama pull`"
-- [ ] `MockAgent` test infrastructure prevents accidental real API calls (disableNetConnect)
-- [ ] Audience prompts differ meaningfully (manager/resume/retro/self)
-- [ ] Dashboard is written with narrative section on success, without on failure
-- [ ] `--strict` causes exit code 1 on AI failure; default behavior exits 0
-- [ ] Narrative only contains aggregated stats — no raw commit messages or diffs in prompt
+- [ ] All 18 RED→GREEN cycles pass
+- [ ] `MockAgent` test infrastructure prevents accidental real API calls (`disableNetConnect`)
+- [ ] `--narrative` without a configured provider shows clear error on stderr
+- [ ] Dashboard written with narrative section on success, without on failure
+- [ ] `--strict` causes exit code 1 on AI failure; default exits 0
+- [ ] Narrative only contains aggregated stats — no raw commits or diffs in prompt
 
 ## Blocked by
 
-- 006-render (dashboard template for narrative section)
-- 004-config (provider settings from config)
+- 006-render (dashboard template for narrative section; cycles 16-18)
+- 004-config (provider settings from config; cycles 10-11, 16)

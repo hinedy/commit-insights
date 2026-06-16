@@ -13,16 +13,25 @@ Implement the layered config system: default → repo config (`.commit-insights.
   - `OLLAMA_HOST` for Ollama (default `http://localhost:11434`)
   - No `COMMIT_INSIGHTS_*` prefixed env vars
 
+## Behaviors (one RED→GREEN cycle each)
+
+| Cycle | Behavior | Detail |
+|-------|----------|--------|
+| 1 | Defaults returned | `loadEffectiveConfig()` with no files present → `{ ai: {}, areas: {}, ticketPattern: /[A-Z][A-Z0-9]*-\d+/, ignorePaths: [] }` |
+| 2 | Repo config loaded | Write `.commit-insights.json` with `{ "ai": { "provider": "ollama" } }` → effective config has `ai.provider = "ollama"` |
+| 3 | User beats repo | Repo sets `ai.provider = "ollama"`, user config (`~/.config/commit-insights/config.json`) sets `ai.provider = "anthropic"` → user wins |
+| 4 | CLI merges without wipe | CLI `--ai-model llama3` + repo with `{ "ai": { "provider": "openai" } }` → effective config has `provider: "openai"` + `model: "llama3"` |
+| 5 | OLLAMA_HOST → ai.baseUrl | Set `OLLAMA_HOST=http://custom:8080` env → `ai.baseUrl = "http://custom:8080"` |
+| 6 | Zod catches typo | Config file has `"provder"` (typo) → `ConfigError` thrown with file path in message |
+| 7 | ignorePaths defaults | No `ignorePaths` in any layer → `config.ignorePaths = []` |
+| 8 | `--explain` shows provenance | Repo sets `ai.provider = "ollama"`, CLI sets `--ai-model llama3` → output shows `"ai.provider → ollama (repo)"`, `"ai.model → llama3 (CLI)"` |
+| 9 | Config flows to analysis | `loadEffectiveConfig()` returns `ticketPattern` → `extractTickets(commits, config.ticketPattern)` consumes it correctly |
+
 ## Acceptance criteria
 
-- [ ] `.commit-insights.json` in repo root is loaded and merged
-- [ ] `~/.config/commit-insights/config.json` is loaded and beats repo config
-- [ ] CLI `--ai-model llama3` merges into `ai` sub-object without wiping `ai.provider`
-- [ ] Zod validation per layer — typo'd key fails with file-path in error message
-- [ ] `commit-insights config --explain` shows which layer set each key
-- [ ] Config values flow to analysis functions (ticketPattern to `extractTickets`, areas to `mapAreasByFile`, ignorePaths to `mapAreasByFile`)
-- [ ] `ignorePaths` defaults to `[]` in Zod schema
+- [ ] All 9 RED→GREEN cycles pass
+- [ ] Interface signatures match the approved design above
 
 ## Blocked by
 
-- 003-analysis
+- Only cycle 9 needs 003-analysis (public interface only, not full implementation)
