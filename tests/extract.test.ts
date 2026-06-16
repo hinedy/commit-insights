@@ -24,7 +24,8 @@ describe("extractCommits", () => {
     expect(commits[0].hash).toBe(hash);
     expect(commits[0].authorName).toBe("Test User");
     expect(commits[0].authorEmail).toBe("test@example.com");
-    expect(commits[0].date).toBe(new Date().toISOString().slice(0, 10));
+    const expectedDate = repo.git("log", "-1", "--date=short", "--format=%ad").trim();
+    expect(commits[0].date).toBe(expectedDate);
     expect(commits[0].subject).toBe("feat: add login");
     expect(commits[0].body).toBe("Implements OAuth2 login flow");
   });
