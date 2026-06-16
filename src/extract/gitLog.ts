@@ -4,7 +4,7 @@ import type { Commit } from "./types";
 
 const asyncExecFile = promisify(execFile);
 
-function parseCommit(line: string): Commit {
+export function parseCommit(line: string): Commit {
   const [hash, parents, authorName, authorEmail, date, subject, body] =
     line.split("\x1f");
 

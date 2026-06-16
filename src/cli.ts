@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { registerConfigCommand } from "./commands/config.js";
+import { registerCacheCommand } from "./commands/cache.js";
 
 declare const __VERSION__: string;
 const VERSION: string =
@@ -13,6 +14,7 @@ export function buildProgram(): Command {
     .version(VERSION);
 
   registerConfigCommand(program);
+  registerCacheCommand(program);
 
   return program;
 }

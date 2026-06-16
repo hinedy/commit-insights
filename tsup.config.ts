@@ -9,4 +9,5 @@ export default defineConfig({
   define: {
     __VERSION__: JSON.stringify(pkg.version),
   },
+  external: ["better-sqlite3"],
 });

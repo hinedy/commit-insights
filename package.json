@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Generate a local git contribution dashboard from commit history",
   "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
   "bin": {
     "commit-insights": "./dist/bin/commit-insights.js"
   },
@@ -16,6 +19,7 @@
     "prepublishOnly": "npm run build"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "tsup": "^8.0.0",
     "tsx": "^4.0.0",
@@ -23,6 +27,7 @@
     "vitest": "^2.0.0"
   },
   "dependencies": {
+    "better-sqlite3": "^12.11.1",
     "commander": "^12.0.0",
     "zod": "^4.4.3"
   }
