@@ -11,7 +11,6 @@ import { renderNarrativeBlock } from "./templates/sections/narrative";
 import { renderFooter } from "./templates/sections/footer";
 import { buildChartInitScript } from "./charts";
 import { STYLES } from "./templates/styles";
-import { jsonForScript } from "./escape";
 
 export interface SectionHTML {
   header: string;
@@ -73,6 +72,8 @@ export function buildDashboardData(
     topTickets,
     recentCommits,
     narrative,
+    version: "0.0.0-dev",
+    generatedAt: new Date().toISOString(),
   };
 }
 
@@ -132,7 +133,7 @@ export function buildSections(data: DashboardData, chartJs: string, chartInitScr
     topTickets: renderTopTickets(data.topTickets),
     recentCommits: renderRecentCommits(data.recentCommits),
     narrative: renderNarrativeBlock(data.narrative),
-    footer: renderFooter("0.2.0", new Date().toISOString()),
+    footer: renderFooter(data.version ?? "0.0.0-dev", data.generatedAt ?? new Date().toISOString()),
   };
   return assembleDashboard(sections, chartJs, chartInitScript);
 }

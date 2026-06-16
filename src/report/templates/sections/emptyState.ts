@@ -1,5 +1,5 @@
 export function renderEmptyState(message: string): string {
-  return `<div class="empty-state"><p>${escapeHtml(message)}</p></div>`;
+  return `<div class="empty-state"><span class="empty-icon" aria-hidden="true">~</span><p>${escapeHtml(message)}</p></div>`;
 }
 
 function escapeHtml(s: string): string {

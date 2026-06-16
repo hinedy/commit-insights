@@ -32,10 +32,11 @@ describe("renderMetricCards", () => {
 });
 
 describe("renderFooter", () => {
-  it("returns footer with version and ISO timestamp", () => {
+  it("returns footer with version, date, and privacy badge", () => {
     const html = renderFooter("0.2.0", "2026-06-17T12:00:00.000Z");
     expect(html).toContain("0.2.0");
-    expect(html).toContain("2026-06-17T12:00:00.000Z");
+    expect(html).toContain("2026-06-17");
+    expect(html).toContain("local");
     expect(html).toMatch(/<footer/i);
   });
 });

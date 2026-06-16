@@ -1,6 +1,8 @@
 export function renderFooter(version: string, generatedAt: string): string {
+  const date = generatedAt.slice(0, 10);
   return `<footer class="dashboard-footer">
-    <p>Generated at ${generatedAt} &mdash; commit-insights v${escapeHtml(version)}</p>
+    <p>Generated ${date} &mdash; commit-insights v${escapeHtml(version)}</p>
+    <span class="footer-badge">local &middot; private</span>
   </footer>`;
 }
 

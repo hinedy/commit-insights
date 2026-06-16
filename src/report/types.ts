@@ -15,4 +15,6 @@ export interface DashboardData {
     tickets: string[];
   }>;
   narrative?: string;
+  version?: string;
+  generatedAt?: string;
 }
