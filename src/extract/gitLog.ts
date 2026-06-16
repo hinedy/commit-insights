@@ -21,18 +21,18 @@ export function parseCommit(line: string): Commit {
 
 export async function extractCommits(
   repoPath: string,
-  _authorFilter?: string,
+  authorFilter?: string,
 ): Promise<Commit[]> {
   let stdout: string;
   try {
-    const result = await asyncExecFile(
-      "git",
-      [
-        "log",
-        "-z",
-        "--pretty=format:%H\x1f%P\x1f%an\x1f%ae\x1f%ad\x1f%s\x1f%b",
-        "--date=short",
-      ],
+    const args = [
+      "log",
+      "-z",
+      "--pretty=format:%H\x1f%P\x1f%an\x1f%ae\x1f%ad\x1f%s\x1f%b",
+      "--date=short",
+    ];
+    if (authorFilter) args.push("--author", authorFilter);
+    const result = await asyncExecFile("git", args,
       {
         cwd: repoPath,
         encoding: "utf-8",
