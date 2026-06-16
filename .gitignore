@@ -2,3 +2,4 @@ dist/
 node_modules/
 *.db
 .env
+src/report/templates/chartjs-bundle.generated.ts

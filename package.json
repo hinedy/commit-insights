@@ -9,7 +9,7 @@
   "files": ["dist"],
   "scripts": {
     "dev": "tsx src/bin/commit-insights.ts",
-    "build": "tsup src/bin/commit-insights.ts src/index.ts --format esm --dts --clean",
+    "build": "tsup",
     "test": "vitest",
     "prepublishOnly": "npm run build"
   },
