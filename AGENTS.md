@@ -31,7 +31,11 @@
 - **Inverted from git**: user config beats repo config — personal AI preferences shouldn't be forceable by team config
 - **Merge**: recursive `deepMerge` with `undefined`-skip — CLI `--ai-model` merges into `ai` sub-object, doesn't wipe it
 - **Validation**: each layer validated against same Zod `.strict()` schema — per-layer error messages point to the exact file with the typo
+- **`ConfigError`** thrown on invalid JSON, unknown keys, typo in config files, or invalid regex pattern
+- **`AppConfig`**: effective config after load — `ai: AIConfig`, `areas: Record<string,string>`, `ticketPattern: string`, `compiledTicketPattern: RegExp` (g-flagged), `ignorePaths: string[]`
+- **`ticketPattern` compiled at load time**: stored as string in files, compiled to `RegExp` with `g` flag at config load; Zod validates pattern is valid regex
 - **Debugging**: `commit-insights config --explain` shows provenance per key
+- **Testing**: 12 tests across 9 cycles — temp dir isolation, env var save/restore, `userConfigPath` injection for user config mocking
 
 ### Analysis transforms (`src/analyze/`)
 
@@ -117,6 +121,7 @@ interface AnalysisResult {
 | Category | Approach | Key patterns |
 |----------|----------|-------------|
 | Extraction | `TestRepo` class: temp dir, `git init`, local config, procedural commits | `beforeEach`/`afterEach` clean isolation |
+| Config | Vitest, temp dir isolation, env var save/restore, `userConfigPath` injection | 12 tests across 9 cycles |
 | Analysis | Vitest, pure function tests over known commit data | No fixtures — construct input arrays inline |
 | AI providers | `undici.MockAgent`, HTTP-level, `disableNetConnect()` | Real SDK runs, realistic error shapes exercised |
 | CLI integration | Smoke test compiled artifact in CI | `npm run build` then `node dist/bin/commit-insights.js generate .` |
@@ -181,7 +186,13 @@ commit-insights/
 │   │   └── testRepo.ts           # TestRepo class
 │   ├── extract.test.ts
 │   ├── classify.test.ts
-│   ├── report.test.ts
+│   ├── classify-type.test.ts
+│   ├── tickets.test.ts
+│   ├── timeline.test.ts
+│   ├── reviewers.test.ts
+│   ├── areas.test.ts
+│   ├── analyze.test.ts
+│   ├── config.test.ts
 │   └── ai/
 │       ├── anthropic.test.ts
 │       └── ollama.test.ts

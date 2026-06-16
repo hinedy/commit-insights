@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { registerConfigCommand } from "./commands/config.js";
 
 declare const __VERSION__: string;
 const VERSION: string =
@@ -10,6 +11,8 @@ export function buildProgram(): Command {
   program
     .description("Generate a local git contribution dashboard from commit history")
     .version(VERSION);
+
+  registerConfigCommand(program);
 
   return program;
 }
