@@ -122,9 +122,9 @@ GREEN: verify cleanup() runs even on test failure
 
 ## Acceptance criteria
 
-- [ ] All 10 RED→GREEN cycles pass
-- [ ] Interface signatures match the approved design above
-- [ ] No changes to interface shape without explicit approval
+- [x] All 10 RED→GREEN cycles pass
+- [x] Interface signatures match the approved design above
+- [x] No changes to interface shape without explicit approval
 
 ## Blocked by
 

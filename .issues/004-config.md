@@ -29,8 +29,8 @@ Implement the layered config system: default → repo config (`.commit-insights.
 
 ## Acceptance criteria
 
-- [ ] All 9 RED→GREEN cycles pass
-- [ ] Interface signatures match the approved design above
+- [x] All 9 RED→GREEN cycles pass
+- [x] Interface signatures match the approved design above
 
 ## Blocked by
 

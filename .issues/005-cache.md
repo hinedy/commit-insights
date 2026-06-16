@@ -286,11 +286,11 @@ This exercises the real concern: orphaned objects are gone from git, but cache s
 
 ## Acceptance criteria
 
-- [ ] 9 of 10 RED→GREEN cycles pass (cycle 7 deferred to 006)
-- [ ] `npm run build` succeeds with externalized `better-sqlite3`
-- [ ] `npm test` — all 65 existing tests still GREEN
-- [ ] Manual smoke: `node dist/bin/commit-insights.js cache status` in a git repo → prints stats
-- [ ] Interface signatures match the approved design above
+- [x] 9 of 10 RED→GREEN cycles pass (cycle 7 deferred to 006)
+- [x] `npm run build` succeeds with externalized `better-sqlite3`
+- [x] `npm test` — all existing tests still GREEN (74 total)
+- [x] Manual smoke: `node dist/bin/commit-insights.js cache status` in a git repo → prints stats
+- [x] Interface signatures match the approved design above
 
 ## Cache design rules (locked in grill)
 

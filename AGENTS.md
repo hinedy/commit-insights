@@ -198,6 +198,10 @@ commit-insights/
 │       └── ollama.test.ts
 ```
 
+## Milestone completion convention
+
+After a milestone's final RED→GREEN cycle passes, check off its acceptance criteria in `.issues/XXX-name.md` (`- [ ]` → `- [x]`). This keeps `.issues/` as both design doc and done-list — no separate project board needed.
+
 ## TDD checklist (every RED→GREEN cycle)
 - [ ] Test describes behavior, not implementation
 - [ ] Test uses public interface only

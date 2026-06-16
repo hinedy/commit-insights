@@ -11,11 +11,11 @@ Initialize the project structure: `package.json`, `tsconfig.json`, `tsup` config
 
 ## Acceptance criteria
 
-- [ ] `npm run build` produces `dist/bin/commit-insights.js` with working shebang
-- [ ] `node dist/bin/commit-insights.js --version` prints the version from `package.json`
-- [ ] `npm run dev -- --version` works via tsx
-- [ ] `dist/` is gitignored
-- [ ] TypeScript strict mode compiles without errors
+- [x] `npm run build` produces `dist/bin/commit-insights.js` with working shebang
+- [x] `node dist/bin/commit-insights.js --version` prints the version from `package.json`
+- [x] `npm run dev -- --version` works via tsx
+- [x] `dist/` is gitignored
+- [x] TypeScript strict mode compiles without errors
 
 ## Blocked by
 

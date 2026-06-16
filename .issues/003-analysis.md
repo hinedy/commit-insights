@@ -283,12 +283,12 @@ function parseReviewers(commits: Commit[]): ReviewerStat[];
 
 ## Acceptance criteria
 
-- [ ] All 43 RED→GREEN cycles pass
-- [ ] `getChangedFiles` uses `git diff-tree --no-commit-id -r --name-only -z` in batches of 500
-- [ ] File data is never cached, never embedded in `Commit`, never reaches dashboard HTML
-- [ ] Interface signatures match the approved design above
-- [ ] `analyzeCommits` is synchronous, pure, has no I/O parameter
-- [ ] `parseReviewers` never emits email addresses in output
+- [x] All 43 RED→GREEN cycles pass
+- [x] `getChangedFiles` uses `git log --no-walk --name-only -z` in batches of 500
+- [x] File data is never cached, never embedded in `Commit`, never reaches dashboard HTML
+- [x] Interface signatures match the approved design above
+- [x] `analyzeCommits` is synchronous, pure, has no I/O parameter
+- [x] `parseReviewers` never emits email addresses in output
 
 ## Blocked by
 
