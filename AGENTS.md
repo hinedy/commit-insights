@@ -33,6 +33,54 @@
 - **Validation**: each layer validated against same Zod `.strict()` schema — per-layer error messages point to the exact file with the typo
 - **Debugging**: `commit-insights config --explain` shows provenance per key
 
+### Analysis transforms (`src/analyze/`)
+
+Six pure-function modules over `Commit[]` — independently testable with inline fixture arrays. Only `mapAreasByFile` requires a real git subprocess.
+
+**Module 1: `classify.ts`** — conventional-commit type detection
+- Matches `subject` only, not body (body scanning causes false positives)
+- Merge detection priority: `parents.length >= 2` (authoritative) → `/^Merge /` (1-parent merges) → conventional-commit regex → `"other"`
+- Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `ci`, `build`, `revert`, `merge`, `other`
+- Backed by `const COMMIT_TYPES = [...] as const` — single source for runtime + type
+
+**Module 2: `tickets.ts`** — ticket/issue reference extraction
+- Default pattern: `/[A-Z][A-Z0-9]*-\d+/g`, overridable via config `ticketPattern`
+- Searches `subject` + `body`, deduplicates within a commit (Set)
+- `counts` = number of unique commits referencing each ticket, not total mentions
+
+**Module 3: `timeline.ts`** — monthly aggregation
+- Returns `TimelineBucket[]` with `{ month: "YYYY-MM", count: number }`
+- **Gap-filling**: emits every month from first to last commit date — zero-count buckets for continuous chart rendering
+
+**Module 4: `areas.ts`** — directory-based area mapping via `mapAreasByFile()`
+- On-demand `git diff-tree --no-commit-id -r --name-only -z` per batch of 500 hashes
+- File paths never stored, never reach dashboard HTML
+- Longest-prefix-match across ALL files in the commit determines the area
+- Prefix auto-normalization: trailing `/` appended if absent (`src/api` → `src/api/`). Path-boundary still prevents `src/api` matching `src/apiary/auth.ts`.
+- On Windows, `\` normalized to `/` before comparison
+- Tie-break (equal prefix length): config insertion-order, first wins
+- `ignorePaths` uses same auto-normalized boundary rule (no globs in v1)
+- No match after ignore filtering → `"Uncategorized"`
+
+**Module 5: `reviewers.ts`** — collaboration parsing
+- Parses `Co-authored-by:` and `Approved-by:` trailers from `commit.body`
+- Returns `ReviewerStat[]` with `collaborations` (not `approvals`) — covers both co-authorship and approval semantics
+- Sorted descending by collaboration count
+
+**Collated result** (`AnalysisResult`):
+```typescript
+interface AnalysisResult {
+  classification: ClassificationResult;   // perCommit + counts by CommitType
+  tickets: TicketResult;                   // perCommit + counts by ticketId
+  timeline: TimelineBucket[];              // monthly buckets with gap-fill
+  areas: Map<string, string>;              // commitHash → areaName
+  areaCounts: Record<string, number>;      // areaName → commit count
+  reviewers: ReviewerStat[];               // sorted desc by collaborations
+}
+```
+
+**Testing**: pure function tests with inline `Commit` arrays — no fixtures, no git. `mapAreasByFile` tests use `TestRepo` + `git diff-tree`.
+
 ### AI layer (`src/ai/providers/`)
 - **Interface**: `AIProvider.generate()` returns `Result<{ text: string }, AIError>` — TypeScript forces `.ok` check before access
 - **Error taxonomy**: `config`, `auth`, `network`, `rate_limit`, `server`, `empty_response`
@@ -121,6 +169,7 @@ commit-insights/
 │   │   ├── templates/
 │   │   │   ├── dashboard.html.ts # template-literal HTML
 │   │   │   ├── chartjs-bundle.generated.ts  # generated, gitignored
+│   │   │   ├── chartConfigs.ts   # Chart.js config factory functions
 │   │   │   └── sections/         # pure (data) => string section functions
 │   │   ├── charts.ts             # data shaping for Chart.js
 │   │   ├── render.ts             # write dashboard.html
@@ -137,6 +186,13 @@ commit-insights/
 │       ├── anthropic.test.ts
 │       └── ollama.test.ts
 ```
+
+## TDD checklist (every RED→GREEN cycle)
+- [ ] Test describes behavior, not implementation
+- [ ] Test uses public interface only
+- [ ] Test would survive internal refactor
+- [ ] Code is minimal for this test
+- [ ] No speculative features added
 
 ## Key constraints for implementation
 - `--narrative` is explicit opt-in; provider config alone never triggers API calls
