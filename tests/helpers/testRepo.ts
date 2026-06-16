@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, writeFileSync, rmSync } from "node:fs";
-import { join } from "node:path";
+import { mkdtempSync, writeFileSync, rmSync, mkdirSync } from "node:fs";
+import { join, dirname } from "node:path";
 import { tmpdir } from "node:os";
 
 export class TestRepo {
@@ -29,6 +29,7 @@ export class TestRepo {
     const files = opts.files ?? { [`${Date.now()}.txt`]: "content" };
     for (const [name, content] of Object.entries(files)) {
       const fullPath = join(this.dir, name);
+      mkdirSync(dirname(fullPath), { recursive: true });
       writeFileSync(fullPath, content);
     }
     this.git("add", "-A");
