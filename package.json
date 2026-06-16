@@ -14,6 +14,7 @@
   ],
   "scripts": {
     "dev": "tsx src/bin/commit-insights.ts",
+    "prebuild": "node scripts/vendor-chartjs.mjs",
     "build": "tsup",
     "test": "vitest",
     "prepublishOnly": "npm run build"
@@ -21,6 +22,7 @@
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
+    "chart.js": "^4.5.1",
     "tsup": "^8.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
