@@ -1,3 +1,5 @@
+import { escapeHtml } from "../../escape";
+
 export function renderNarrativeBlock(text: string | undefined): string {
   if (!text) return "";
   const paragraphs = text
@@ -8,10 +10,4 @@ export function renderNarrativeBlock(text: string | undefined): string {
     <h2 class="section-label">Summary</h2>
     <div class="narrative-content">${paragraphs}</div>
   </section>`;
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#x27;" })[c],
-  );
 }

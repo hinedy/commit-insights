@@ -11,6 +11,7 @@ jobs:
       - run: npm ci
       - run: npm run build
       - run: npm test
+      - run: npm audit --production --audit-level=high
       - name: Smoke — version
         run: node dist/bin/commit-insights.js --version
       - name: Smoke — self-repo dashboard
