@@ -1,6 +1,7 @@
 {
   "name": "commit-insights",
   "version": "0.1.0",
+  "license": "MIT",
   "description": "Generate a local git contribution dashboard from commit history",
   "type": "module",
   "engines": {
