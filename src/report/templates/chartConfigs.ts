@@ -11,9 +11,10 @@ export function monthlyActivityConfig(
         {
           label: "Commits",
           data: timeline.map((b) => b.count),
-          backgroundColor: "rgba(46, 160, 67, 0.6)",
-          borderColor: "#2ea043",
+          backgroundColor: "rgba(226, 232, 240, 0.5)",
+          borderColor: "rgba(226, 232, 240, 0.8)",
           borderWidth: 1,
+          borderRadius: 3,
         },
       ],
     },
@@ -22,10 +23,10 @@ export function monthlyActivityConfig(
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: "#8b949e" }, grid: { color: "#30363d" } },
+        x: { ticks: { color: "#6b7280" }, grid: { color: "rgba(255,255,255,0.06)" } },
         y: {
-          ticks: { color: "#8b949e", stepSize: 1 },
-          grid: { color: "#30363d" },
+          ticks: { color: "#6b7280", stepSize: 1 },
+          grid: { color: "rgba(255,255,255,0.06)" },
         },
       },
     },
@@ -36,19 +37,19 @@ export function typeBreakdownConfig(counts: Record<string, number>): ChartConfig
   const labels = Object.keys(counts);
   const data = Object.values(counts);
   const COLORS: Record<string, string> = {
-    feat: "#2ea043",
-    fix: "#d29922",
-    chore: "#8b949e",
-    docs: "#58a6ff",
-    refactor: "#bc8cff",
-    test: "#f0883e",
-    style: "#3fb950",
-    perf: "#db6d28",
-    ci: "#795548",
-    build: "#607d8b",
-    revert: "#e34c26",
-    merge: "#c9d1d9",
-    other: "#484f58",
+    feat: "#34d399",
+    fix: "#fbbf24",
+    chore: "#6b7280",
+    docs: "#60a5fa",
+    refactor: "#a78bfa",
+    test: "#f87171",
+    style: "#34d399",
+    perf: "#fb923c",
+    ci: "#a78bfa",
+    build: "#2dd4bf",
+    revert: "#f87171",
+    merge: "#e2e8f0",
+    other: "#4b5563",
   };
 
   return {
@@ -71,7 +72,7 @@ export function typeBreakdownConfig(counts: Record<string, number>): ChartConfig
       plugins: {
         legend: {
           position: "bottom",
-          labels: { color: "#8b949e", padding: 12 },
+          labels: { color: "#6b7280", padding: 14, font: { family: "ui-monospace, SFMono-Regular, Consolas, monospace", size: 10 } },
         },
       },
     },
@@ -90,9 +91,10 @@ export function areaBreakdownConfig(
         {
           label: "Commits",
           data: areas.map((a) => a.count),
-          backgroundColor: "rgba(88, 166, 255, 0.6)",
-          borderColor: "#58a6ff",
+          backgroundColor: "rgba(226, 232, 240, 0.5)",
+          borderColor: "rgba(226, 232, 240, 0.8)",
           borderWidth: 1,
+          borderRadius: 3,
         },
       ],
     },
@@ -102,10 +104,10 @@ export function areaBreakdownConfig(
       plugins: { legend: { display: false } },
       scales: {
         x: {
-          ticks: { color: "#8b949e", stepSize: 1 },
-          grid: { color: "#30363d" },
+          ticks: { color: "#6b7280", stepSize: 1 },
+          grid: { color: "rgba(255,255,255,0.06)" },
         },
-        y: { ticks: { color: "#8b949e" }, grid: { display: false } },
+        y: { ticks: { color: "#a0aaba" }, grid: { display: false } },
       },
     },
   };

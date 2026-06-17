@@ -26,7 +26,7 @@
 - **`--no-cache` flag**: skip cache, re-extract everything
 
 ### Config system (`src/config/`)
-- **Layers** (lowest→highest precedence): built-in defaults → repo config (`.commit-insights.json`, team-shared: areas, ticket regex) → user config (`~/.config/commit-insights/config.json`, personal: AI provider/model) → env vars (API keys only: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OLLAMA_HOST`) → CLI flags
+- **Layers** (lowest→highest precedence): built-in defaults → repo config (`.commit-insights.json`, team-shared: areas, ticket regex) → user config (`~/.config/commit-insights/config.json`, personal: AI provider/model) → env vars (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, `OLLAMA_HOST`) → CLI flags
 - **Standard provider env vars**: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, `OLLAMA_HOST` (default `http://localhost:11434`). No `COMMIT_INSIGHTS_*` prefixed vars. `AI_MODEL`/`AI_BASE_URL` are generic overrides; `OLLAMA_HOST` is an Ollama-specific alias for `baseUrl`.
 - **Inverted from git**: user config beats repo config — personal AI preferences shouldn't be forceable by team config
 - **Merge**: recursive `deepMerge` with `undefined`-skip — CLI `--ai-model` merges into `ai` sub-object, doesn't wipe it
@@ -39,7 +39,7 @@
 
 ### Analysis transforms (`src/analyze/`)
 
-Six pure-function modules over `Commit[]` — independently testable with inline fixture arrays. Only `mapAreasByFile` requires a real git subprocess.
+Five pure-function modules over `Commit[]` — independently testable with inline fixture arrays. A sixth module (`areas.ts`) uses `mapAreasByFile()` which requires a real git subprocess for `git log --no-walk` calls.
 
 **Module 1: `classify.ts`** — conventional-commit type detection
 - Matches `subject` only, not body (body scanning causes false positives)
@@ -57,7 +57,7 @@ Six pure-function modules over `Commit[]` — independently testable with inline
 - **Gap-filling**: emits every month from first to last commit date — zero-count buckets for continuous chart rendering
 
 **Module 4: `areas.ts`** — directory-based area mapping via `mapAreasByFile()`
-- On-demand `git diff-tree --no-commit-id -r --name-only -z` per batch of 500 hashes
+- On-demand `git log --no-walk --name-only -z` per batch of 500 hashes
 - File paths never stored, never reach dashboard HTML
 - Longest-prefix-match across ALL files in the commit determines the area
 - Prefix auto-normalization: trailing `/` appended if absent (`src/api` → `src/api/`). Path-boundary still prevents `src/api` matching `src/apiary/auth.ts`.
@@ -83,7 +83,7 @@ interface AnalysisResult {
 }
 ```
 
-**Testing**: pure function tests with inline `Commit` arrays — no fixtures, no git. `mapAreasByFile` tests use `TestRepo` + `git diff-tree`.
+**Testing**: pure function tests with inline `Commit` arrays — no fixtures, no git. `mapAreasByFile` tests use `TestRepo` + `git log --no-walk`.
 
 ### AI layer (`src/ai/providers/`)
 - **Interface**: `AIProvider.generate()` returns `Result<{ text: string }, AIError>` — TypeScript forces `.ok` check before access
@@ -114,7 +114,7 @@ interface AnalysisResult {
 - **`--cdn-charts`**: opt-in flag with offline warning
 - **`--export-json`** (future): separate artifact for raw data drill-down, not baked into HTML
 - **Chart.js vendoring**: pre-build script (`scripts/vendor-chartjs.mjs`) generates `src/report/templates/chartjs-bundle.generated.ts` with `export const CHART_JS = '...'`. Generated file is gitignored.
-- **Composable sections**: pure `(data) => string` functions per page region — header, metric cards, charts, tables, narrative, footer. Assembled by `compose()` in `dashboard.html.ts`. Dark theme, responsive grid, system font stack. See `.issues/006-render.md` for full UI design.
+- **Composable sections**: pure `(data) => string` functions per page region — header, metric cards, charts, tables, narrative, footer. Assembled by `assembleDashboard()` in `dashboard.html.ts`. Dark theme, responsive grid, system font stack. See `.issues/006-render.md` for full UI design.
 - **Typography**: system font stack for body; `ui-monospace, "SFMono-Regular", Consolas, monospace` for hashes, ticket IDs, type badges
 
 ### Testing
@@ -138,7 +138,7 @@ interface AnalysisResult {
 
 ```
 commit-insights/
-├── bin/commit-insights.ts           # shebang entry → cli.ts
+├── src/bin/commit-insights.ts       # shebang entry → cli.ts
 ├── scripts/
 │   └── vendor-chartjs.mjs          # prebuild: generate Chart.js bundle as TS
 ├── tsup.config.ts                  # tsup config with __VERSION__ define
@@ -159,7 +159,7 @@ commit-insights/
 │   ├── analyze/
 │   │   ├── classify.ts           # conventional-commit type detection
 │   │   ├── tickets.ts            # ticket/issue ref extraction
-│   │   ├── timeline.ts           # monthly/weekly aggregation
+│   │   ├── timeline.ts           # monthly aggregation
 │   │   ├── areas.ts              # file/directory area mapping
 │   │   └── reviewers.ts          # Co-authored-by / Approved-by → collaborations counts
 │   ├── ai/

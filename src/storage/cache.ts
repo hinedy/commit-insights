@@ -47,11 +47,15 @@ function getDbPath(repoPath: string): string {
 }
 
 function getHeadSha(repoPath: string): string {
-  return execFileSync("git", ["rev-parse", "HEAD"], {
-    cwd: repoPath,
-    encoding: "utf-8",
-    stdio: ["pipe", "pipe", "pipe"],
-  }).trim();
+  try {
+    return execFileSync("git", ["rev-parse", "HEAD"], {
+      cwd: repoPath,
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    }).trim();
+  } catch {
+    return "";
+  }
 }
 
 function isAncestor(ancestor: string, descendant: string, repoPath: string): boolean {

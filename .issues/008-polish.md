@@ -1,28 +1,27 @@
-## What to build
+## What was built
 
-Final pass: add the remaining project artifacts that wrap everything up — LICENSE, `.gitignore`, `.npmignore`, config-precedence diagram, exit-code contract, progress-style CLI output, and a final proofread of all docs.
+Final pass: wrapped up the remaining project artifacts — LICENSE, `.gitignore`, config-precedence diagram, exit-code contract, progress-style CLI output, CI smoke tests, and a full proofread of all docs.
 
-- `LICENSE` — MIT
-- `.gitignore` — `dist/`, `node_modules/`, `src/report/templates/chartjs-bundle.generated.ts`, `*.db`, `.env`
-- `.npmignore` — exclude tests/, .issues/, src/, scripts/ (only dist/ ships)
-- `README.md` — usage, privacy guarantee ("nothing leaves your machine by default"), config precedence diagram, `--narrative` opt-in note, library use note, examples, standard env var names (`OPENAI_API_KEY` etc.)
-- **Exit codes**:
-  - `0` = dashboard produced (with or without narrative)
-  - `1` = fatal error, or AI failure with `--strict`
-- **CLI output style**: progress-style, one line per phase with timing. e.g. `Extracting commits... 1,247 commits (0.8s)`
-- **CI smoke tests** at milestones: after 001 (`--version`), after 006 (first `generate`), after 008 (final)
-- Final proofread pass over all docs and AGENTS.md
+- `LICENSE` — MIT (pre-existing)
+- `.gitignore` — `dist/`, `node_modules/`, `src/report/templates/chartjs-bundle.generated.ts`, `*.db`, `.env` (pre-existing)
+- ~~`.npmignore`~~ — not needed; `"files": ["dist"]` whitelist is authoritative and simpler
+- `README.md` — full proofread pass: removed 3 non-existent CLI flags, fixed `--narrative-length` enum, added Gemini to provider table, updated all default models from provider code, added `.env` docs, fixed `--all` description, fixed invocation example
+- `AGENTS.md` — fixed env vars list and directory tree path
+- **Exit codes** — verified: 0 = dashboard produced, 1 = fatal error or `--strict` AI failure (dead ternary cleaned)
+- **CLI output** — progress-style with timing per phase (`performance.now()`), counts on extraction + area mapping, gated on `process.stdout.isTTY`
+- **CI smoke tests** — `.github/workflows/ci.yml`: tests → build → version check → self-repo dashboard → empty-repo dashboard → `npm pack --dry-run`
+- **Bonus fix** — `getHeadSha` crashed on empty repos; wrapped in try-catch (empty repo now renders a valid sparse dashboard)
 
 ## Acceptance criteria
 
-- [ ] LICENSE file exists (MIT)
-- [ ] `.gitignore` covers `dist/`, `node_modules/`, `src/report/templates/chartjs-bundle.generated.ts`, `*.db`, `.env`
-- [ ] `.npmignore` excludes source/test/scripts from published package
-- [ ] README documents the privacy guarantee, config precedence, `--narrative` being opt-in, and standard env var names
-- [ ] Exit code 0 for success (with or without narrative), exit code 1 for fatal errors or `--strict` failures
-- [ ] CLI prints progress-style output per phase
-- [ ] CI smoke tests run at milestones
-- [ ] All documentation is internally consistent and uses `commit-insights` naming
+- [x] LICENSE file exists (MIT)
+- [x] `.gitignore` covers `dist/`, `node_modules/`, `src/report/templates/chartjs-bundle.generated.ts`, `*.db`, `.env`
+- [x] ~~`.npmignore`~~ — not needed; `"files": ["dist"]` in package.json is authoritative (see npm docs: `files` whitelist overrides `.npmignore`)
+- [x] README documents the privacy guarantee, config precedence, `--narrative` being opt-in, and standard env var names
+- [x] Exit code 0 for success (with or without narrative), exit code 1 for fatal errors or `--strict` failures
+- [x] CLI prints progress-style output per phase (gated on `process.stdout.isTTY`)
+- [x] CI smoke tests run at milestones (`.github/workflows/ci.yml`)
+- [x] All documentation is internally consistent and uses `commit-insights` naming
 
 ## Blocked by
 

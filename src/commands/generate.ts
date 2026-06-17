@@ -51,7 +51,20 @@ export function registerGenerateCommand(program: Command): void {
 
           const { config } = loadEffectiveConfig(repoPath);
 
-          console.error("Extracting commits...");
+          const p = process.stderr;
+          const tty = process.stdout.isTTY;
+          const startPhase = (msg: string): number => {
+            if (tty) p.write(`${msg}... `);
+            return performance.now();
+          };
+          const endPhase = (t: number, extra = ""): void => {
+            if (tty) {
+              const elapsed = ((performance.now() - t) / 1000).toFixed(1);
+              p.write(`${extra}(${elapsed}s)\n`);
+            }
+          };
+
+          const t1 = startPhase("Extracting commits");
           let commits;
           if (opts.all) {
             commits = await extractCommits(repoPath, opts.author);
@@ -63,6 +76,7 @@ export function registerGenerateCommand(program: Command): void {
             });
             commits = result.commits;
           }
+          endPhase(t1, `${commits.length} commits `);
 
           if (commits.length === 0) {
             console.error("No commits found.");
@@ -84,16 +98,18 @@ export function registerGenerateCommand(program: Command): void {
             return;
           }
 
-          console.error("Mapping areas...");
+          const t2 = startPhase("Mapping areas");
           const commitAreaMap = await mapAreasByFile(
             commits.map((c) => c.hash),
             config.areas,
             config.ignorePaths,
             repoPath,
           );
+          endPhase(t2, `${Object.keys(commitAreaMap).length} areas `);
 
-          console.error("Analyzing commits...");
+          const t3 = startPhase("Analyzing commits");
           const analysis = analyzeCommits(commits, config, commitAreaMap);
+          endPhase(t3);
 
           let narrative: string | undefined;
           if (opts.narrative) {
@@ -107,7 +123,7 @@ export function registerGenerateCommand(program: Command): void {
                 console.error(`Warning: AI narrative unavailable: ${error?.message ?? "unknown error"}.`);
                 if (opts.strict) process.exit(1);
               } else {
-                console.error("Generating AI narrative...");
+                const t4 = startPhase("Generating narrative");
                 const authors = new Set(commits.map((c) => c.authorEmail));
                 const dates = commits.map((c) => c.date).filter(Boolean).sort();
                 const totalCommits = commits.length;
@@ -127,6 +143,7 @@ export function registerGenerateCommand(program: Command): void {
                   audience: opts.narrativeAudience,
                   length: opts.narrativeLength,
                 });
+                endPhase(t4);
                 if (narrativeText) {
                   narrative = narrativeText;
                 } else {
@@ -137,12 +154,13 @@ export function registerGenerateCommand(program: Command): void {
             }
           }
 
-          console.error("Building dashboard...");
-          const data = buildDashboardData(analysis, commits, narrative);
+          const t5 = startPhase("Building dashboard");
+          const data = buildDashboardData(analysis, commits, getRepoName(repoPath), narrative);
 
           const chartJs = opts.cdnCharts ? "" : CHART_JS;
           const outputPath = resolve(opts.out);
           renderDashboard({ outputPath, data, chartJs });
+          endPhase(t5);
 
           console.log(
             `Dashboard written to ${outputPath} (${commits.length} commits, ${data.totals.authors} authors)`,
@@ -150,7 +168,7 @@ export function registerGenerateCommand(program: Command): void {
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error(`Error: ${msg}`);
-          process.exit(opts.strict ? 1 : 1);
+          process.exit(1);
         }
       },
     );

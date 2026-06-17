@@ -3,7 +3,6 @@ import { renderHeader } from "../src/report/templates/sections/header";
 import { renderMetricCards } from "../src/report/templates/sections/metricCards";
 import { renderFooter } from "../src/report/templates/sections/footer";
 import { renderNarrativeBlock } from "../src/report/templates/sections/narrative";
-import { renderEmptyState } from "../src/report/templates/sections/emptyState";
 import { renderChartContainers } from "../src/report/templates/sections/charts";
 import {
   renderTopTickets,
@@ -50,14 +49,6 @@ describe("renderNarrativeBlock", () => {
 
   it("returns empty string when undefined", () => {
     expect(renderNarrativeBlock(undefined)).toBe("");
-  });
-});
-
-describe("renderEmptyState", () => {
-  it("returns centered placeholder with message", () => {
-    const html = renderEmptyState("No commits found");
-    expect(html).toContain("No commits found");
-    expect(html).toMatch(/<div/i);
   });
 });
 

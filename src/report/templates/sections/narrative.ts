@@ -4,10 +4,10 @@ export function renderNarrativeBlock(text: string | undefined): string {
     .split(/\n\n+/)
     .map((p) => `<p>${escapeHtml(p.trim())}</p>`)
     .join("");
-  return `<div class="narrative-card">
-    <h3 class="narrative-heading">Summary</h3>
-    ${paragraphs}
-  </div>`;
+  return `<section class="narrative-section">
+    <h2 class="section-label">Summary</h2>
+    <div class="narrative-content">${paragraphs}</div>
+  </section>`;
 }
 
 function escapeHtml(s: string): string {

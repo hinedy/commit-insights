@@ -1,0 +1,30 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test-and-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Smoke — version
+        run: node dist/bin/commit-insights.js --version
+      - name: Smoke — self-repo dashboard
+        run: |
+          node dist/bin/commit-insights.js generate . --out /tmp/self.html
+          test -s /tmp/self.html
+      - name: Smoke — empty repo
+        run: |
+          mkdir -p /tmp/empty-repo && cd /tmp/empty-repo
+          git init -q
+          git config user.email "ci@example.com"
+          git config user.name "CI"
+          node $GITHUB_WORKSPACE/dist/bin/commit-insights.js generate /tmp/empty-repo \
+            --out /tmp/empty.html
+          test -s /tmp/empty.html
+      - name: Verify publish contents
+        run: npm pack --dry-run

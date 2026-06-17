@@ -36,9 +36,9 @@ describe("buildDashboardData", () => {
   it("shapes analysis into display-ready DashboardData with sorted top-N", () => {
     const commits = [makeCommit("abc123", "2026-06-15", "a@test.com")];
     const analysis = makeAnalysis();
-    const data = buildDashboardData(analysis, commits);
+    const data = buildDashboardData(analysis, commits, "test-repo");
 
-    expect(data.repoName).toBeTruthy();
+    expect(data.repoName).toBe("test-repo");
     expect(data.period).toEqual({ start: "2026-06", end: "2026-06" });
     expect(data.totals).toEqual({ commits: 1, tickets: 1, authors: 1 });
     expect(data.timeline).toHaveLength(1);
@@ -50,7 +50,7 @@ describe("buildDashboardData", () => {
   });
 
   it("includes narrative when provided", () => {
-    const data = buildDashboardData(makeAnalysis(), [makeCommit("abc123", "2026-06-15", "a@test.com")], "Some AI text");
+    const data = buildDashboardData(makeAnalysis(), [makeCommit("abc123", "2026-06-15", "a@test.com")], "test-repo", "Some AI text");
     expect(data.narrative).toBe("Some AI text");
   });
 });
@@ -83,7 +83,7 @@ describe("renderDashboard", () => {
     const tmpDir = mkdtempSync(join(tmpdir(), "render-test-"));
     const outPath = join(tmpDir, "out.html");
 
-    const data = buildDashboardData(makeAnalysis(), [makeCommit("abc123", "2026-06-15", "a@test.com")]);
+    const data = buildDashboardData(makeAnalysis(), [makeCommit("abc123", "2026-06-15", "a@test.com")], "test-repo");
     renderDashboard({ outputPath: outPath, data, chartJs: "// chart.js" });
 
     expect(existsSync(outPath)).toBe(true);

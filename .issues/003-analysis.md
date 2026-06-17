@@ -2,7 +2,7 @@
 
 Implement pure-function analysis transforms over `Commit[]` — conventional-commit type detection, ticket/issue reference extraction, monthly timeline aggregation, directory-based area mapping (via on-demand file-path extraction), and reviewer parsing (Co-authored-by / Approved-by / Reviewed-by).
 
-Six modules, each independently testable with inline fixture arrays (no real git needed except `mapAreasByFile` which uses `git diff-tree`).
+Six modules, each independently testable with inline fixture arrays (no real git needed except `mapAreasByFile` which uses `git log --no-walk`).
 
 ## Design decisions (grill-resolved)
 
@@ -12,7 +12,7 @@ The following decisions were stress-tested and locked in before implementation b
 2. **`CONVENTIONAL_RE` generated from `COMMIT_TYPES`** — the regex is built at module load time by filtering out `STRUCTURAL_TYPES` (`"merge"`, `"other"`), with a compile-time assertion (`_check` line) ensuring every structural type is a valid `CommitType`. Adding a new type to `COMMIT_TYPES` automatically flows into the regex.
 3. **`buildTimeline` sorts input commits by date** before grouping — lexicographic sort on `YYYY-MM-DD` strings (no `Date` parsing). Gap-filling uses a pure `nextMonth()` string-arithmetic helper (not `Date`), avoiding timezone/edge-case bugs at month/year boundaries.
 4. **`parseReviewers` dedup by email** — internal `Map<string, { displayName, count }>` keyed on lowercase email (or lowercase name when email absent). Email never survives into output (`ReviewerStat` has `name + collaborations` only). Scans only the **trailer block** (lines after the last `\n\n` in body), not the full body, preventing false positives from quoted/reverted trailers. `Reviewed-by:` added alongside `Co-authored-by:` and `Approved-by:`.
-5. **`areas.ts` split into two exports** — private `getChangedFiles(hashes, repoPath)` calls `git diff-tree`; public `mapAreasByFile(...)` handles batching (500/group) and applies prefix matching. The batching loop is tested via `TestRepo` in Cycles 20-29.
+5. **`areas.ts` split into two exports** — private `getChangedFiles(hashes, repoPath)` calls `git log --no-walk`; public `mapAreasByFile(...)` handles batching (500/group) and applies prefix matching. The batching loop is tested via `TestRepo` in Cycles 20-29.
 6. **No errors from analysis modules** — all outputs handle emptiness naturally. Input validation (regex compilation, config shape) happens at config-load boundary in `src/config/`, not in analysis.
 7. **`ticketPattern` compiled at config load** — `AppConfig` carries both raw string (`ticketPattern`) and compiled `RegExp` (`compiledTicketPattern`). Zod validates the pattern string is a valid regex at config-load time, so `generate.ts` never sees a `SyntaxError` mid-pipeline.
 
@@ -142,7 +142,7 @@ Split into two exports. The first is a private subprocess helper; the second is 
 ```typescript
 /**
  * INTERNAL — exported for test isolation.
- * Calls `git diff-tree --no-commit-id -r --name-only -z` for a batch of hashes.
+ * Calls `git log --no-walk --name-only -z` for a batch of hashes.
  * File paths retrieved from the working tree, never stored in Commit objects.
  * Returns array parallel to hashes: one entry per input hash (files in commit).
  */

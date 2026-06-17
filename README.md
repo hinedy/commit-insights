@@ -25,21 +25,17 @@ When AI narratives are enabled (`--narrative`), only **aggregated statistics** (
 ## Usage
 
 ```
-commit-insights [path]                          generate dashboard (default)
-commit-insights generate [path]                 explicit alias
+commit-insights generate [path]                 generate contribution dashboard
 commit-insights cache status|clear [path]       inspect or clear cache
 commit-insights config [--json] [--explain]     show effective config
 
 Options:
-  --author <pattern>          filter by author
-  --all                       include all authors (team mode)
-  --area <path=Name>          map a path prefix to an area name (repeatable)
+  --author <pattern>          filter commits by author
+  --all                       bypass cache, full reconciliation
   --out <file>                output path (default: dashboard.html)
   --narrative                 include AI-written narrative summary
   --narrative-audience <type> manager | retro | resume | self
-  --narrative-length <len>    short | detailed
-  --ai-provider <name>        anthropic | openai | ollama
-  --ai-model <name>           model name (provider-dependent)
+  --narrative-length <len>    short | normal
   --strict                    exit non-zero if AI narrative fails
   --no-cache                  skip cache, re-extract everything
   --cdn-charts                load Chart.js from CDN (requires internet)
@@ -52,16 +48,18 @@ Lowest → Highest:
 1. **Built-in defaults**
 2. **Repo config** (`.commit-insights.json` — team-shared: AI provider/baseUrl/model, areas, ticket patterns)
 3. **User config** (`~/.config/commit-insights/config.json` — personal: AI provider/model)
-4. **Environment variables** (API keys only: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`)
+4. **Environment variables** (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, `OLLAMA_HOST`)
 5. **CLI flags**
 
 > User config beats repo config — your AI provider preference shouldn't be forced by a team config file.
+
+API keys are read from a `.env` file in the current working directory (gitignored via `.gitignore`). Never commit API keys to your repo config.
 
 ```json
 {
   "ai": {
     "provider": "ollama",
-    "model": "llama3"
+    "model": "llama3.2"
   },
   "areas": {
     "src/components/": "UI",
@@ -73,11 +71,14 @@ Lowest → Highest:
 
 ## AI providers
 
-| Provider | Model default | Key required |
+| Provider | Default model | Key required |
 |----------|--------------|--------------|
-| Anthropic | `claude-sonnet-4-6` | `ANTHROPIC_API_KEY` |
+| Anthropic | `claude-sonnet-4-20250514` | `ANTHROPIC_API_KEY` |
 | OpenAI | `gpt-4o` | `OPENAI_API_KEY` |
-| Ollama | `llama3` | No key (local) |
+| Gemini | `gemini-2.0-flash` | `GOOGLE_API_KEY` |
+| Ollama | `llama3.2` | No key (local) |
+
+Default models can be overridden via config (`model`) or `AI_MODEL` environment variable.
 
 ## Development
 

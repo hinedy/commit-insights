@@ -1,6 +1,6 @@
-import { execFileSync } from "node:child_process";
-import { basename } from "node:path";
-import { type DashboardData } from "./types";
+declare const __VERSION__: string;
+
+import type { DashboardData } from "./types";
 import type { AnalysisResult } from "../analyze";
 import type { Commit } from "../extract/types";
 import { renderHeader } from "./templates/sections/header";
@@ -25,6 +25,7 @@ export interface SectionHTML {
 export function buildDashboardData(
   analysis: AnalysisResult,
   commits: Commit[],
+  repoName: string,
   narrative?: string,
 ): DashboardData {
   const authors = new Set(commits.map((c) => c.authorEmail));
@@ -59,11 +60,11 @@ export function buildDashboardData(
     .map(([area, count]) => ({ area, count }));
 
   return {
-    repoName: getRepoName(),
+    repoName,
     period,
     totals: {
       commits: commits.length,
-      tickets: topTickets.length,
+      tickets: Object.keys(analysis.tickets.counts).length,
       authors: authors.size,
     },
     timeline: analysis.timeline,
@@ -72,7 +73,7 @@ export function buildDashboardData(
     topTickets,
     recentCommits,
     narrative,
-    version: "0.0.0-dev",
+    version: typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev",
     generatedAt: new Date().toISOString(),
   };
 }
@@ -83,19 +84,6 @@ function computePeriod(commits: Commit[]): { start: string; end: string } {
   const start = dates[0].slice(0, 7);
   const end = dates[dates.length - 1].slice(0, 7);
   return { start, end };
-}
-
-function getRepoName(): string {
-  try {
-    const url = execFileSync("git", ["config", "--get", "remote.origin.url"], {
-      encoding: "utf-8",
-      stdio: ["pipe", "pipe", "pipe"],
-    }).trim();
-    const match = url.match(/\/([^/]+)\.git$/);
-    return match ? match[1] : basename(process.cwd());
-  } catch {
-    return basename(process.cwd());
-  }
 }
 
 export function assembleDashboard(
