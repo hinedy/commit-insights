@@ -41,8 +41,6 @@ export function buildDashboardData(
   const areaLookup = analysis.areas;
 
   const recentCommits = commits
-    .slice()
-    .reverse()
     .slice(0, 200)
     .map((c) => ({
       hash: c.hash,

@@ -76,6 +76,14 @@ export function registerGenerateCommand(program: Command): void {
             });
             commits = result.commits;
           }
+          if (opts.author) {
+            const needle = opts.author.toLowerCase();
+            commits = commits.filter(
+              (c) =>
+                c.authorName.toLowerCase().includes(needle) ||
+                c.authorEmail.toLowerCase().includes(needle),
+            );
+          }
           endPhase(t1, `${commits.length} commits `);
 
           if (commits.length === 0) {
