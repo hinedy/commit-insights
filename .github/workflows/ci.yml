@@ -9,8 +9,8 @@ jobs:
         with:
           node-version: "22"
       - run: npm ci
-      - run: npm test
       - run: npm run build
+      - run: npm test
       - name: Smoke — version
         run: node dist/bin/commit-insights.js --version
       - name: Smoke — self-repo dashboard
