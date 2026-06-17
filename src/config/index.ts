@@ -66,6 +66,18 @@ function loadEnvConfig(): RawConfig {
       apiKey: process.env.ANTHROPIC_API_KEY,
     };
   }
+  if (process.env.GOOGLE_API_KEY) {
+    config.ai = {
+      ...(config.ai ?? {}),
+      apiKey: process.env.GOOGLE_API_KEY,
+    };
+  }
+  if (process.env.AI_MODEL) {
+    config.ai = { ...(config.ai ?? {}), model: process.env.AI_MODEL };
+  }
+  if (process.env.AI_BASE_URL) {
+    config.ai = { ...(config.ai ?? {}), baseUrl: process.env.AI_BASE_URL };
+  }
   return config;
 }
 

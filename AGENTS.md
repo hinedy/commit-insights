@@ -27,7 +27,7 @@
 
 ### Config system (`src/config/`)
 - **Layers** (lowest→highest precedence): built-in defaults → repo config (`.commit-insights.json`, team-shared: areas, ticket regex) → user config (`~/.config/commit-insights/config.json`, personal: AI provider/model) → env vars (API keys only: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OLLAMA_HOST`) → CLI flags
-- **Standard provider env vars**: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `OLLAMA_HOST` (default `http://localhost:11434`). No `COMMIT_INSIGHTS_*` prefixed vars.
+- **Standard provider env vars**: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, `OLLAMA_HOST` (default `http://localhost:11434`). No `COMMIT_INSIGHTS_*` prefixed vars. `AI_MODEL`/`AI_BASE_URL` are generic overrides; `OLLAMA_HOST` is an Ollama-specific alias for `baseUrl`.
 - **Inverted from git**: user config beats repo config — personal AI preferences shouldn't be forceable by team config
 - **Merge**: recursive `deepMerge` with `undefined`-skip — CLI `--ai-model` merges into `ai` sub-object, doesn't wipe it
 - **Validation**: each layer validated against same Zod `.strict()` schema — per-layer error messages point to the exact file with the typo
@@ -87,14 +87,15 @@ interface AnalysisResult {
 
 ### AI layer (`src/ai/providers/`)
 - **Interface**: `AIProvider.generate()` returns `Result<{ text: string }, AIError>` — TypeScript forces `.ok` check before access
-- **Error taxonomy**: `config`, `auth`, `network`, `rate_limit`, `server`, `empty_response`
-- **Constructor throws on missing API key** (config error, caught once at creation), `generate()` returns Result for runtime failures
-- **SDK strategy**: Official Anthropic + OpenAI SDKs as optional peer dependencies + dynamic `import()`. Clear install hint on missing SDK. Ollama uses raw `fetch`.
+- **Error taxonomy**: `config`, `auth`, `network`, `rate_limit`, `server`, `empty_response`, `unknown`
+- **Constructor throws on missing apiKey** (config error, caught once at creation), `generate()` returns Result for runtime failures
+- **SDK strategy**: Official Anthropic + OpenAI + Google Generative AI SDKs as optional peer dependencies + dynamic `import()`. Clear install hint on missing SDK. Ollama uses raw `fetch`.
 - **No streaming**: spinner/progress line on stderr, single-shot response
-- **Response format**: plain text prose — split on `\n\n` into `<p>` tags; no markdown parsing
+- **Response format**: plain text prose — splitting into `<p>` tags happens at render layer (section function), not in AI modules. No markdown parsing.
 - **No retry logic**: fail fast, warn, move on
-- **Ollama**: `ECONNREFUSED` → "is Ollama running?", 404 → "model not found, try `ollama pull <model>`"
+- **Ollama**: `ECONNREFUSED` → "is Ollama running?", 404 → "try `ollama pull`"
 - **Testing**: `undici.MockAgent` at HTTP layer, `disableNetConnect()` to prevent accidental real calls
+- **NOT covered by TDD cycles**: response format splitting (`\n\n` → `<p>` tags is a render-layer concern); `--narrative-length` is a prompt instruction, not a hard token limit
 
 ### Narrative prompts (`src/ai/narratives.ts`)
 - **Only aggregated stats sent to model** — no raw commit messages or diffs
@@ -124,7 +125,7 @@ interface AnalysisResult {
 | Config | Vitest, temp dir isolation, env var save/restore, `userConfigPath` injection | 12 tests across 9 cycles |
 | Analysis | Vitest, pure function tests over known commit data | No fixtures — construct input arrays inline |
 | AI providers | `undici.MockAgent`, HTTP-level, `disableNetConnect()` | Real SDK runs, realistic error shapes exercised |
-| CLI integration | Smoke test compiled artifact in CI | `npm run build` then `node dist/bin/commit-insights.js generate .` |
+| CLI integration | Vitest + TestRepo, spawn compiled CLI in temp dir | `tests/cli-integration.test.ts` — 3 tests for `--narrative` / `--strict` / graceful degradation |
 
 ### Build & dev workflow
 - **Dev**: `npm run dev -- generate <path>` (runs `tsx src/bin/commit-insights.ts`)
@@ -163,13 +164,17 @@ commit-insights/
 │   │   └── reviewers.ts          # Co-authored-by / Approved-by → collaborations counts
 │   ├── ai/
 │   │   ├── providers/
-│   │   │   ├── types.ts          # AIProvider, AIError, AIConfig
+│   │   │   ├── types.ts          # AIProvider, AIError, Result, StatsPayload
 │   │   │   ├── anthropic.ts
+│   │   │   ├── anthropic-utils.ts # error classifier
 │   │   │   ├── openai.ts
+│   │   │   ├── openai-utils.ts    # error classifier
 │   │   │   ├── ollama.ts
+│   │   │   ├── gemini.ts
+│   │   │   ├── gemini-utils.ts    # error classifier
 │   │   │   └── index.ts          # createProvider()
-│   │   ├── narratives.ts         # buildPrompt(), StatsPayload
-│   │   └── prompts.ts            # system prompt templates
+│   │   ├── narratives.ts         # generateNarrative()
+│   │   └── prompts.ts            # buildPrompt(), audience variants
 │   ├── report/
 │   │   ├── templates/
 │   │   │   ├── dashboard.html.ts # template-literal HTML
@@ -193,9 +198,16 @@ commit-insights/
 │   ├── areas.test.ts
 │   ├── analyze.test.ts
 │   ├── config.test.ts
+│   ├── cli-integration.test.ts   # --narrative / --strict CLI integration
 │   └── ai/
+│       ├── types.test.ts
 │       ├── anthropic.test.ts
-│       └── ollama.test.ts
+│       ├── openai.test.ts
+│       ├── ollama.test.ts
+│       ├── gemini.test.ts
+│       ├── createProvider.test.ts
+│       ├── prompts.test.ts
+│       └── narratives.test.ts
 ```
 
 ## Milestone completion convention

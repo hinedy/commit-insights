@@ -50,7 +50,7 @@ Options:
 Lowest → Highest:
 
 1. **Built-in defaults**
-2. **Repo config** (`.commit-insights.json` — team-shared: areas, ticket patterns)
+2. **Repo config** (`.commit-insights.json` — team-shared: AI provider/baseUrl/model, areas, ticket patterns)
 3. **User config** (`~/.config/commit-insights/config.json` — personal: AI provider/model)
 4. **Environment variables** (API keys only: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`)
 5. **CLI flags**

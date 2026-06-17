@@ -10,6 +10,8 @@ import { mapAreasByFile } from "../analyze/areas.js";
 import { buildDashboardData } from "../report/dashboard.html.js";
 import { renderDashboard } from "../report/render.js";
 import { CHART_JS } from "../report/templates/chartjs-bundle.generated.js";
+import { createProvider } from "../ai/providers/index.js";
+import { generateNarrative } from "../ai/narratives.js";
 
 export function registerGenerateCommand(program: Command): void {
   program
@@ -20,6 +22,8 @@ export function registerGenerateCommand(program: Command): void {
     .option("--no-cache", "Skip cache, re-extract everything")
     .option("--all", "Bypass cache entirely, full reconciliation")
     .option("--narrative", "Generate AI narrative (requires provider config)")
+    .option("--narrative-audience <audience>", "Narrative audience: manager, retro, resume, self", "self")
+    .option("--narrative-length <length>", "Narrative length: short, normal", "normal")
     .option("--strict", "Exit with code 1 on AI failure")
     .option("--cdn-charts", "Use CDN-hosted Chart.js instead of bundled")
     .option("--author <name>", "Filter commits by author")
@@ -31,6 +35,8 @@ export function registerGenerateCommand(program: Command): void {
           noCache?: boolean;
           all?: boolean;
           narrative?: boolean;
+          narrativeAudience?: string;
+          narrativeLength?: string;
           strict?: boolean;
           cdnCharts?: boolean;
           author?: string;
@@ -91,7 +97,44 @@ export function registerGenerateCommand(program: Command): void {
 
           let narrative: string | undefined;
           if (opts.narrative) {
-            console.error("AI narrative requested but not yet implemented.");
+              const aiConfig = config.ai;
+              if (!aiConfig?.provider) {
+              console.error("Warning: --narrative requires an AI provider (set ai.provider in config).");
+              if (opts.strict) process.exit(1);
+            } else {
+              const { provider, error } = createProvider(aiConfig);
+              if (error || !provider) {
+                console.error(`Warning: AI narrative unavailable: ${error?.message ?? "unknown error"}.`);
+                if (opts.strict) process.exit(1);
+              } else {
+                console.error("Generating AI narrative...");
+                const authors = new Set(commits.map((c) => c.authorEmail));
+                const dates = commits.map((c) => c.date).filter(Boolean).sort();
+                const totalCommits = commits.length;
+                const narrativeText = await generateNarrative(provider, {
+                  totalCommits,
+                  dateRange: { from: dates[0] ?? "", to: dates[dates.length - 1] ?? "" },
+                  totalAuthors: authors.size,
+                  monthlyTimeline: analysis.timeline,
+                  typeBreakdown: analysis.classification.counts,
+                  topTickets: Object.entries(analysis.tickets.counts)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 15)
+                    .map(([id, count]) => ({ id, count })),
+                  ticketSummary: `${analysis.tickets.perCommit.filter((t) => t.tickets.length > 0).length} commits reference tickets`,
+                  topReviewers: analysis.reviewers.slice(0, 10),
+                }, {
+                  audience: opts.narrativeAudience,
+                  length: opts.narrativeLength,
+                });
+                if (narrativeText) {
+                  narrative = narrativeText;
+                } else {
+                  console.error("Warning: AI narrative generation failed.");
+                  if (opts.strict) process.exit(1);
+                }
+              }
+            }
           }
 
           console.error("Building dashboard...");
