@@ -4,3 +4,6 @@ node_modules/
 .env
 manual-smoke/
 src/report/templates/chartjs-bundle.generated.ts
+dashboard.html
+.claude/
+.cursor/
