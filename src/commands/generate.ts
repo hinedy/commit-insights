@@ -98,6 +98,7 @@ export function registerGenerateCommand(program: Command): void {
                 typeCounts: {},
                 areaCounts: [],
                 topTickets: [],
+                reviewers: [],
                 recentCommits: [],
               },
               chartJs: opts.cdnCharts ? "" : CHART_JS,
