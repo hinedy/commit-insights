@@ -1,11 +1,12 @@
 {
   "name": "commit-insights",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/hinedy/commit-insights.git"
   },
+  "homepage": "https://github.com/hinedy/commit-insights#readme",
   "description": "Generate a local git contribution dashboard from commit history",
   "type": "module",
   "engines": {
