@@ -1,17 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { renderHeader } from "../src/report/templates/sections/header";
-import { renderMetricCards } from "../src/report/templates/sections/metricCards";
+import { renderStatsBar } from "../src/report/templates/sections/statsBar";
 import { renderFooter } from "../src/report/templates/sections/footer";
 import { renderNarrativeBlock } from "../src/report/templates/sections/narrative";
-import { renderChartContainers } from "../src/report/templates/sections/charts";
-import {
-  renderTopTickets,
-  renderRecentCommits,
-} from "../src/report/templates/sections/tables";
+import { renderMonthlyChart, renderTypeBars, renderAreaBars } from "../src/report/templates/sections/charts";
+import { renderTickets } from "../src/report/templates/sections/tickets";
+import { renderReviewers } from "../src/report/templates/sections/reviewers";
+import { renderRecentCommits } from "../src/report/templates/sections/tables";
 
 describe("renderHeader", () => {
-  it("returns header with repo name and period", () => {
-    const html = renderHeader("my-repo", { start: "2026-01", end: "2026-06" });
+  it("returns header with hero number, repo name and period", () => {
+    const html = renderHeader("my-repo", { start: "2026-01", end: "2026-06" }, "2026-06-17T20:00:00.000Z", { commits: 42 });
+    expect(html).toContain("42");
     expect(html).toContain("my-repo");
     expect(html).toContain("2026-01");
     expect(html).toContain("2026-06");
@@ -19,14 +19,21 @@ describe("renderHeader", () => {
   });
 });
 
-describe("renderMetricCards", () => {
-  it("returns 3 cards with correct values, HTML-escaped", () => {
-    const html = renderMetricCards({ commits: 100, tickets: 5, authors: 3 });
+describe("renderStatsBar", () => {
+  it("returns inline stats with values", () => {
+    const html = renderStatsBar({ commits: 100, tickets: 5, authors: 3 });
     expect(html).toContain("100");
     expect(html).toContain("5");
     expect(html).toContain("3");
-    const cards = html.match(/<div class="metric-card"/g);
-    expect(cards).toHaveLength(3);
+    expect(html).toContain("commits");
+    expect(html).toContain("authors");
+    expect(html).toContain("tickets");
+  });
+
+  it("omits tickets when zero", () => {
+    const html = renderStatsBar({ commits: 10, tickets: 0, authors: 2 });
+    expect(html).toContain("10");
+    expect(html).not.toContain("tickets");
   });
 });
 
@@ -41,10 +48,10 @@ describe("renderFooter", () => {
 });
 
 describe("renderNarrativeBlock", () => {
-  it("returns card HTML when text is provided", () => {
+  it("returns section HTML when text is provided", () => {
     const html = renderNarrativeBlock("Some narrative text.");
     expect(html).toContain("Some narrative text.");
-    expect(html).toMatch(/<div/i);
+    expect(html).toMatch(/<section/i);
   });
 
   it("returns empty string when undefined", () => {
@@ -52,18 +59,41 @@ describe("renderNarrativeBlock", () => {
   });
 });
 
-describe("renderChartContainers", () => {
-  it("returns canvas wrappers with expected DOM IDs", () => {
-    const html = renderChartContainers();
+describe("renderMonthlyChart", () => {
+  it("returns canvas with monthly chart ID", () => {
+    const html = renderMonthlyChart();
     expect(html).toContain("chart-monthly");
-    expect(html).toContain("chart-types");
-    expect(html).toContain("chart-areas");
+    expect(html).toContain("canvas");
   });
 });
 
-describe("renderTopTickets", () => {
-  it("renders top tickets table rows", () => {
-    const html = renderTopTickets([
+describe("renderTypeBars", () => {
+  it("returns bars for non-zero types", () => {
+    const html = renderTypeBars({ feat: 5, fix: 3, other: 1 });
+    expect(html).toContain("feat");
+    expect(html).toContain("fix");
+    expect(html).toContain("5");
+    expect(html).toContain("3");
+    expect(html).not.toContain("docs");
+  });
+});
+
+describe("renderAreaBars", () => {
+  it("returns bars for area counts", () => {
+    const html = renderAreaBars([{ area: "Source", count: 10 }, { area: "Tests", count: 5 }]);
+    expect(html).toContain("Source");
+    expect(html).toContain("Tests");
+    expect(html).toContain("10");
+  });
+
+  it("returns empty string for empty array", () => {
+    expect(renderAreaBars([])).toBe("");
+  });
+});
+
+describe("renderTickets", () => {
+  it("renders ticket list items", () => {
+    const html = renderTickets([
       { id: "PROJ-123", count: 5 },
       { id: "PROJ-456", count: 3 },
     ]);
@@ -73,7 +103,23 @@ describe("renderTopTickets", () => {
   });
 
   it("handles empty array", () => {
-    expect(renderTopTickets([])).toBe("");
+    expect(renderTickets([])).toBe("");
+  });
+});
+
+describe("renderReviewers", () => {
+  it("renders reviewer list items", () => {
+    const html = renderReviewers([
+      { name: "Alice", collaborations: 5 },
+      { name: "Bob", collaborations: 3 },
+    ]);
+    expect(html).toContain("Alice");
+    expect(html).toContain("5");
+    expect(html).toContain("Bob");
+  });
+
+  it("handles empty array", () => {
+    expect(renderReviewers([])).toBe("");
   });
 });
 
@@ -90,7 +136,7 @@ describe("renderRecentCommits", () => {
   it("caps at 200 rows", () => {
     const commits = Array.from({ length: 201 }, (_, i) => makeCommit(i));
     const html = renderRecentCommits(commits);
-    const dataRows = html.match(/<tr><td/g);
+    const dataRows = html.match(/class="commit-row"/g);
     expect(dataRows).toHaveLength(200);
   });
 

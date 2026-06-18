@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { buildDashboardData, assembleDashboard, type SectionHTML } from "../src/report/dashboard.html";
+import { buildDashboardData } from "../src/report/dashboard.html";
+import { assembleDashboard } from "../src/report/dashboard.html";
 import { renderDashboard } from "../src/report/render";
 import type { AnalysisResult } from "../src/analyze";
 import type { Commit } from "../src/extract/types";
@@ -45,6 +46,7 @@ describe("buildDashboardData", () => {
     expect(data.typeCounts.feat).toBe(1);
     expect(data.areaCounts).toHaveLength(1);
     expect(data.topTickets).toHaveLength(1);
+    expect(data.reviewers).toEqual([]);
     expect(data.recentCommits).toHaveLength(1);
     expect(data.narrative).toBeUndefined();
   });
@@ -57,22 +59,27 @@ describe("buildDashboardData", () => {
 
 describe("assembleDashboard", () => {
   it("returns full HTML document with all sections", () => {
-    const sections: SectionHTML = {
-      header: "<header>test</header>",
-      metricCards: "<div>cards</div>",
-      charts: "<div>charts</div>",
-      topTickets: "<section>tickets</section>",
-      recentCommits: "<section>commits</section>",
-      narrative: "",
-      footer: "<footer>footer</footer>",
-    };
-    const html = assembleDashboard(sections, "// mock chart.js", "");
+    const html = assembleDashboard(
+      "<header>test</header>",
+      "<div>stats</div>",
+      "",
+      "<section>monthly</section>",
+      "<section>types</section>",
+      "",
+      "",
+      "<section>commits</section>",
+      "<footer>footer</footer>",
+      "// mock chart.js",
+      "",
+    );
 
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain("mock chart.js");
     expect(html).toContain("<header>test</header>");
-    expect(html).toContain("<div>cards</div>");
-    expect(html).toContain("<div>charts</div>");
+    expect(html).toContain("<div>stats</div>");
+    expect(html).toContain("<section>monthly</section>");
+    expect(html).toContain("<section>types</section>");
+    expect(html).toContain("<section>commits</section>");
     expect(html).toContain("<footer>footer</footer>");
     expect(html).toContain("</html>");
   });
@@ -108,6 +115,7 @@ describe("renderDashboard", () => {
         typeCounts: {},
         areaCounts: [],
         topTickets: [],
+        reviewers: [],
         recentCommits: [],
       },
       chartJs: "// chart.js",

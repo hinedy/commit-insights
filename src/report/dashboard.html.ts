@@ -4,23 +4,15 @@ import type { DashboardData } from "./types";
 import type { AnalysisResult } from "../analyze";
 import type { Commit } from "../extract/types";
 import { renderHeader } from "./templates/sections/header";
-import { renderMetricCards } from "./templates/sections/metricCards";
-import { renderChartContainers } from "./templates/sections/charts";
-import { renderTopTickets, renderRecentCommits } from "./templates/sections/tables";
+import { renderStatsBar } from "./templates/sections/statsBar";
+import { renderMonthlyChart, renderTypeBars, renderAreaBars } from "./templates/sections/charts";
+import { renderTickets } from "./templates/sections/tickets";
+import { renderReviewers } from "./templates/sections/reviewers";
+import { renderRecentCommits } from "./templates/sections/tables";
 import { renderNarrativeBlock } from "./templates/sections/narrative";
 import { renderFooter } from "./templates/sections/footer";
 import { buildChartInitScript } from "./charts";
 import { STYLES } from "./templates/styles";
-
-export interface SectionHTML {
-  header: string;
-  metricCards: string;
-  charts: string;
-  topTickets: string;
-  recentCommits: string;
-  narrative: string;
-  footer: string;
-}
 
 export function buildDashboardData(
   analysis: AnalysisResult,
@@ -69,6 +61,7 @@ export function buildDashboardData(
     typeCounts: analysis.classification.counts,
     areaCounts: areaCountsArr,
     topTickets,
+    reviewers: analysis.reviewers,
     recentCommits,
     narrative,
     version: typeof __VERSION__ !== "undefined" ? __VERSION__ : "dev",
@@ -85,10 +78,20 @@ function computePeriod(commits: Commit[]): { start: string; end: string } {
 }
 
 export function assembleDashboard(
-  sections: SectionHTML,
+  header: string,
+  statsBar: string,
+  narrative: string,
+  monthlyChart: string,
+  typeBars: string,
+  areaBars: string,
+  sideBySide: string,
+  recentCommits: string,
+  footer: string,
   chartJs: string,
   chartInitScript: string,
 ): string {
+  const scrollObserver = `document.addEventListener("DOMContentLoaded",function(){if(window.matchMedia("(prefers-reduced-motion:reduce)").matches)return;var o=new IntersectionObserver(function(e){e.forEach(function(e,i){if(e.isIntersecting){setTimeout(function(){e.target.classList.add("section-visible")},i*80);o.unobserve(e.target)}})},{threshold:0.1});document.querySelectorAll("section").forEach(function(e){o.observe(e)})});`;
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -99,27 +102,42 @@ export function assembleDashboard(
 <script>${chartJs}</script>
 </head>
 <body>
-${sections.header}
-${sections.metricCards}
-${sections.narrative}
-${sections.charts}
-${sections.topTickets}
-${sections.recentCommits}
-${sections.footer}
+${header}
+${statsBar}
+${narrative}
+${monthlyChart}
+${typeBars}
+${areaBars}
+${sideBySide}
+${recentCommits}
+${footer}
 <script>${chartInitScript}</script>
+<script>${scrollObserver}</script>
 </body>
 </html>`;
 }
 
 export function buildSections(data: DashboardData, chartJs: string, chartInitScript: string): string {
-  const sections: SectionHTML = {
-    header: renderHeader(data.repoName, data.period),
-    metricCards: renderMetricCards(data.totals),
-    charts: renderChartContainers(),
-    topTickets: renderTopTickets(data.topTickets),
-    recentCommits: renderRecentCommits(data.recentCommits),
-    narrative: renderNarrativeBlock(data.narrative),
-    footer: renderFooter(data.version ?? "0.0.0-dev", data.generatedAt ?? new Date().toISOString()),
-  };
-  return assembleDashboard(sections, chartJs, chartInitScript);
+  const generatedAt = data.generatedAt ?? new Date().toISOString();
+  const ticketsHtml = renderTickets(data.topTickets);
+  const reviewersHtml = renderReviewers(data.reviewers);
+  let sideBySide = "";
+  if (ticketsHtml && reviewersHtml) {
+    sideBySide = `<div class="side-grid">${ticketsHtml}${reviewersHtml}</div>`;
+  } else {
+    sideBySide = ticketsHtml + reviewersHtml;
+  }
+  return assembleDashboard(
+    renderHeader(data.repoName, data.period, generatedAt, data.totals),
+    renderStatsBar(data.totals),
+    renderNarrativeBlock(data.narrative),
+    renderMonthlyChart(),
+    renderTypeBars(data.typeCounts),
+    renderAreaBars(data.areaCounts),
+    sideBySide,
+    renderRecentCommits(data.recentCommits),
+    renderFooter(data.version ?? "0.0.0-dev", generatedAt),
+    chartJs,
+    chartInitScript,
+  );
 }

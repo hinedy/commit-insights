@@ -7,7 +7,7 @@ export function renderNarrativeBlock(text: string | undefined): string {
     .map((p) => `<p>${escapeHtml(p.trim())}</p>`)
     .join("");
   return `<section class="narrative-section">
-    <h2 class="section-label">Summary</h2>
+    <h2 class="eyebrow">Summary</h2>
     <div class="narrative-content">${paragraphs}</div>
   </section>`;
 }

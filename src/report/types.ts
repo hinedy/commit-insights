@@ -6,6 +6,7 @@ export interface DashboardData {
   typeCounts: Record<string, number>;
   areaCounts: Array<{ area: string; count: number }>;
   topTickets: Array<{ id: string; count: number }>;
+  reviewers: Array<{ name: string; collaborations: number }>;
   recentCommits: Array<{
     hash: string;
     date: string;
