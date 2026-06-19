@@ -45,6 +45,7 @@ Options:
   --strict                    exit non-zero if AI narrative fails
   --no-cache                  skip cache, re-extract everything
   --cdn-charts                load Chart.js from CDN (requires internet)
+  --no-open                   don't open dashboard in browser after generation
 ```
 
 **Output location**: Dashboard writes to the current working directory by default, not the repository root. Use `--out` to override.

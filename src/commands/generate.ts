@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, exec } from "node:child_process";
 import { resolve, basename } from "node:path";
 import { existsSync } from "node:fs";
 import type { Command } from "commander";
@@ -27,6 +27,7 @@ export function registerGenerateCommand(program: Command): void {
     .option("--strict", "Exit with code 1 on AI failure")
     .option("--cdn-charts", "Use CDN-hosted Chart.js instead of bundled")
     .option("--author <name>", "Filter commits by author")
+    .option("--no-open", "Don't open dashboard in browser after generation")
     .action(
       async (
         path: string,
@@ -40,6 +41,7 @@ export function registerGenerateCommand(program: Command): void {
           strict?: boolean;
           cdnCharts?: boolean;
           author?: string;
+          open: boolean;
         },
       ) => {
         try {
@@ -104,6 +106,7 @@ export function registerGenerateCommand(program: Command): void {
               chartJs: opts.cdnCharts ? "" : CHART_JS,
             });
             console.log(`Dashboard written to ${resolve(opts.out)}`);
+            if (tty && opts.open) openInBrowser(resolve(opts.out));
             return;
           }
 
@@ -174,6 +177,7 @@ export function registerGenerateCommand(program: Command): void {
           console.log(
             `Dashboard written to ${outputPath} (${commits.length} commits, ${data.totals.authors} authors)`,
           );
+          if (tty && opts.open) openInBrowser(outputPath);
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : String(err);
           console.error(`Error: ${msg}`);
@@ -195,4 +199,19 @@ function getRepoName(repoPath: string): string {
   } catch {
     return basename(repoPath);
   }
+}
+
+function openInBrowser(filePath: string): void {
+  const escaped = filePath.replace(/"/g, '\\"');
+  let cmd: string;
+  if (process.platform === "win32") {
+    cmd = `start "" "${escaped}"`;
+  } else if (process.platform === "darwin") {
+    cmd = `open "${escaped}"`;
+  } else {
+    cmd = `xdg-open "${escaped}"`;
+  }
+  exec(cmd, (err) => {
+    if (err) console.error(`Warning: could not open browser: ${err.message}`);
+  });
 }
