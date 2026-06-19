@@ -2,6 +2,11 @@
 
 Generate a local git contribution dashboard (static HTML) from your repo's commit history. Optional AI-written narrative summaries via BYOK/BYOM providers.
 
+## Prerequisites
+
+- Node.js >= 18
+- Git repository with at least one commit
+
 ```
 npm install -g commit-insights
 commit-insights generate .
@@ -26,27 +31,30 @@ When AI narratives are enabled (`--narrative`), only **aggregated statistics** (
 
 ```
 commit-insights generate [path]                 generate contribution dashboard
-commit-insights cache status|clear [path]       inspect or clear cache
+commit-insights cache status [path]             show cache statistics
+commit-insights cache clear [path]              clear the commit cache
 commit-insights config [--json] [--explain]     show effective config
 
 Options:
   --author <pattern>          filter commits by author
   --all                       bypass cache, full reconciliation
-  --out <file>                output path (default: dashboard.html)
+  --out <file>                output path (default: dashboard.html in CWD)
   --narrative                 include AI-written narrative summary
-  --narrative-audience <type> manager | retro | resume | self
-  --narrative-length <len>    short | normal
+  --narrative-audience <type> manager | retro | resume | self (default: self)
+  --narrative-length <len>    short | normal (default: normal)
   --strict                    exit non-zero if AI narrative fails
   --no-cache                  skip cache, re-extract everything
   --cdn-charts                load Chart.js from CDN (requires internet)
 ```
+
+**Output location**: Dashboard writes to the current working directory by default, not the repository root. Use `--out` to override.
 
 ## Configuration (precedence)
 
 Lowest → Highest:
 
 1. **Built-in defaults**
-2. **Repo config** (`.commit-insights.json` — team-shared: AI provider/baseUrl/model, areas, ticket patterns)
+2. **Repo config** (`.commit-insights.json` — team-shared: areas, ticket patterns)
 3. **User config** (`~/.config/commit-insights/config.json` — personal: AI provider/model)
 4. **Environment variables** (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, `OLLAMA_HOST`)
 5. **CLI flags**
@@ -54,6 +62,18 @@ Lowest → Highest:
 > User config beats repo config — your AI provider preference shouldn't be forced by a team config file.
 
 API keys are read from a `.env` file in the current working directory (gitignored via `.gitignore`). Never commit API keys to your repo config.
+
+### Config options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `ai.provider` | `"openai" \| "anthropic" \| "ollama" \| "gemini"` | AI provider for narratives |
+| `ai.model` | `string` | Model override (default varies by provider) |
+| `ai.baseUrl` | `string` | Custom API endpoint (for proxies/compatibility) |
+| `ai.apiKey` | `string` | API key (prefer env vars or `.env` file) |
+| `areas` | `Record<string, string>` | Path prefix → area name mapping |
+| `ticketPattern` | `string` | Regex for ticket/issue ID extraction |
+| `ignorePaths` | `string[]` | Path prefixes to exclude from area mapping |
 
 ```json
 {
@@ -65,8 +85,20 @@ API keys are read from a `.env` file in the current working directory (gitignore
     "src/components/": "UI",
     "src/api/": "Backend"
   },
-  "ticketPattern": "PROJ-\\d+"
+  "ticketPattern": "PROJ-\\d+",
+  "ignorePaths": ["vendor/", "node_modules/"]
 }
+```
+
+### Config explain
+
+Use `commit-insights config --explain` to see where each config value originates:
+
+```
+ai.model <- user (config.json)
+ai.provider <- repo (.commit-insights.json)
+areas <- repo (.commit-insights.json)
+ticketPattern <- repo (.commit-insights.json)
 ```
 
 ## AI providers
@@ -79,6 +111,34 @@ API keys are read from a `.env` file in the current working directory (gitignore
 | Ollama | `llama3.2` | No key (local) |
 
 Default models can be overridden via config (`model`) or `AI_MODEL` environment variable.
+
+### Narrative audiences
+
+| Audience | Style |
+|----------|-------|
+| `self` | Technical, detailed (default) |
+| `manager` | High-level summary, business impact |
+| `retro` | Sprint-focused, achievements and blockers |
+| `resume` | Accomplishment-oriented, quantified impact |
+
+## Cache
+
+The SQLite cache lives in `.git/commit-insights/cache.db` and stores extracted commit data for incremental updates.
+
+```bash
+commit-insights cache status    # Show cached commit count, last run time, DB size
+commit-insights cache clear     # Delete cache, force full re-extraction on next run
+```
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| "No commits found" | Ensure you're in a git repo with at least one commit |
+| "AI narrative unavailable" | Check `ai.provider` is set in config or env var |
+| "Error: path does not exist" | Verify the repository path is correct |
+| Cache seems stale | Run `commit-insights cache clear` then regenerate |
+| Dashboard missing sections | Some sections (areas, tickets, reviewers) are conditional on config/data |
 
 ## Development
 
