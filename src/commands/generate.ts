@@ -146,7 +146,7 @@ export function registerGenerateCommand(program: Command): void {
                     .sort((a, b) => b[1] - a[1])
                     .slice(0, 15)
                     .map(([id, count]) => ({ id, count })),
-                  ticketSummary: `${analysis.tickets.perCommit.filter((t) => t.tickets.length > 0).length} commits reference tickets`,
+                  ticketCommitCount: analysis.tickets.perCommit.filter((t) => t.tickets.length > 0).length,
                   topReviewers: analysis.reviewers.slice(0, 10),
                 }, {
                   audience: opts.narrativeAudience,

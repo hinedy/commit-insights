@@ -21,7 +21,7 @@ export interface StatsPayload {
   monthlyTimeline: { month: string; count: number }[];
   typeBreakdown: Record<string, number>;
   topTickets: { id: string; count: number }[];
-  ticketSummary: string;
+  ticketCommitCount: number;
   topReviewers: { name: string; collaborations: number }[];
 }
 
