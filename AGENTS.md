@@ -7,10 +7,10 @@
 ## Core Architecture Decisions
 
 ### Git log extraction (`src/extract/gitLog.ts`)
-- **Format**: `git log -z --pretty=format:%H\x1f%an\x1f%ae\x1f%ad\x1f%P\x1f%s\x1f%b --date=short`
+- **Format**: `git log -z --pretty=format:%H\x1f%P\x1f%an\x1f%ae\x1f%ad\x1f%s\x1f%b --date=short`
 - **No trailing record separator** — the `-z` NUL terminator is sufficient; `\x1e` caused phantom empty body fields
 - **Empty repo**: catch exit code 128 + "does not have any commits yet" → return `[]`
-- **Fields**: hash, authorName, authorEmail, date, parents, subject, body — `\x1f`-separated, `\0`-separated records
+- **Fields**: hash, parents, authorName, authorEmail, date, subject, body — `\x1f`-separated, `\0`-separated records
 - `parents` stored as space-separated hashes (raw `%P` output), split into `string[]` by consumer
 - Edge cases tested: empty body, multi-line body with blank lines, merge commits, binary files in tree, detached HEAD
 - **`authorFilter`**: parameter on `extractCommits()` — only used for `--no-cache` runs. Cache population always extracts without filter. Cache reads apply `authorFilter` as post-filter.
@@ -28,6 +28,7 @@
 ### Config system (`src/config/`)
 - **Layers** (lowest→highest precedence): built-in defaults → repo config (`.commit-insights.json`, team-shared: areas, ticket regex) → user config (`~/.config/commit-insights/config.json`, personal: AI provider/model) → env vars (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, `OLLAMA_HOST`) → CLI flags
 - **Standard provider env vars**: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `GOOGLE_API_KEY`, `AI_MODEL`, `AI_BASE_URL`, `OLLAMA_HOST` (default `http://localhost:11434`). No `COMMIT_INSIGHTS_*` prefixed vars. `AI_MODEL`/`AI_BASE_URL` are generic overrides; `OLLAMA_HOST` is an Ollama-specific alias for `baseUrl`.
+- **`dotenv`**: loaded at startup (`import "dotenv/config"` in `src/bin/commit-insights.ts`) — reads `.env` file from CWD if present
 - **Inverted from git**: user config beats repo config — personal AI preferences shouldn't be forceable by team config
 - **Merge**: recursive `deepMerge` with `undefined`-skip — CLI `--ai-model` merges into `ai` sub-object, doesn't wipe it
 - **Validation**: each layer validated against same Zod `.strict()` schema — per-layer error messages point to the exact file with the typo
@@ -63,12 +64,12 @@ Five pure-function modules over `Commit[]` — independently testable with inlin
 - Prefix auto-normalization: trailing `/` appended if absent (`src/api` → `src/api/`). Path-boundary still prevents `src/api` matching `src/apiary/auth.ts`.
 - On Windows, `\` normalized to `/` before comparison
 - Tie-break (equal prefix length): config insertion-order, first wins
-- `ignorePaths` uses same auto-normalized boundary rule (no globs in v1)
+- `ignorePaths` auto-normalization differs from prefix normalization: paths with `/` or `\` get trailing `/` appended; single-segment names (no slash) stay as-is for exact matching (e.g., `package-lock.json`). No globs in v1.
 - No match after ignore filtering → `"Uncategorized"`
 
 **Module 5: `reviewers.ts`** — collaboration parsing
-- Parses `Co-authored-by:` and `Approved-by:` trailers from `commit.body`
-- Returns `ReviewerStat[]` with `collaborations` (not `approvals`) — covers both co-authorship and approval semantics
+- Parses `Co-authored-by:`, `Approved-by:`, and `Reviewed-by:` trailers from `commit.body`
+- Returns `ReviewerStat[]` with `collaborations` (not `approvals`) — covers co-authorship, approval, and review semantics
 - Sorted descending by collaboration count
 
 **Collated result** (`AnalysisResult`):
@@ -89,7 +90,7 @@ interface AnalysisResult {
 - **Interface**: `AIProvider.generate()` returns `Result<{ text: string }, AIError>` — TypeScript forces `.ok` check before access
 - **Error taxonomy**: `config`, `auth`, `network`, `rate_limit`, `server`, `empty_response`, `unknown`
 - **Constructor throws on missing apiKey** (config error, caught once at creation), `generate()` returns Result for runtime failures
-- **SDK strategy**: Official Anthropic + OpenAI + Google Generative AI SDKs as optional peer dependencies + dynamic `import()`. Clear install hint on missing SDK. Ollama uses raw `fetch`.
+- **SDK strategy**: Official Anthropic + OpenAI + Google Generative AI SDKs as optional peer dependencies + dynamic `import()`. Ollama uses raw `fetch`.
 - **No streaming**: spinner/progress line on stderr, single-shot response
 - **Response format**: plain text prose — splitting into `<p>` tags happens at render layer (section function), not in AI modules. No markdown parsing.
 - **No retry logic**: fail fast, warn, move on
@@ -108,14 +109,14 @@ interface AnalysisResult {
 ### Report generation (`src/report/`)
 - **Output**: single self-contained `dashboard.html` — Chart.js inlined, CSS inlined, no external assets
 - **Output location**: current working directory (CWD where command was run), not repo root. `--out` overrides.
-- **Charts**: pre-computed aggregates only (monthly buckets, type counts, top-N lists) — not raw commit arrays
+- **Charts**: pre-computed aggregates only (monthly buckets, type counts, top-N lists) — not raw commit arrays. Monthly activity uses Chart.js; type/area breakdowns use CSS-only horizontal bars.
 - **Dashboard size**: ~250-300KB regardless of repo size (dominated by vendored Chart.js)
 - **XSS prevention**: `escapeHtml()` for HTML text content; `jsonForScript()` escapes `</script>`, `U+2028`, `U+2029` in JSON
-- **`--cdn-charts`**: opt-in flag with offline warning
+- **`--cdn-charts`**: opt-in flag to load Chart.js from CDN instead of inlined bundle
 - **`--export-json`** (future): separate artifact for raw data drill-down, not baked into HTML
 - **Chart.js vendoring**: pre-build script (`scripts/vendor-chartjs.mjs`) generates `src/report/templates/chartjs-bundle.generated.ts` with `export const CHART_JS = '...'`. Generated file is gitignored.
 - **Composable sections**: pure `(data) => string` functions per page region — header, metric cards, charts, tables, narrative, footer. Assembled by `assembleDashboard()` in `dashboard.html.ts`. Dark theme, responsive grid, system font stack. See `.issues/006-render.md` for full UI design.
-- **Typography**: system font stack for body; `ui-monospace, "SFMono-Regular", Consolas, monospace` for hashes, ticket IDs, type badges
+- **Typography**: system font stack for body; `ui-monospace, "SFMono-Regular", Consolas, "Liberation Mono", monospace` for hashes, ticket IDs, type badges
 
 ### Testing
 
@@ -129,7 +130,8 @@ interface AnalysisResult {
 
 ### Build & dev workflow
 - **Dev**: `npm run dev -- generate <path>` (runs `tsx src/bin/commit-insights.ts`)
-- **Build**: `tsup src/bin/commit-insights.ts src/index.ts --format esm --dts --clean`
+- **Build**: `tsup` (reads config from `tsup.config.ts` with `__VERSION__` define, `external: ["better-sqlite3"]`)
+- **Prebuild**: `node scripts/vendor-chartjs.mjs` (generates `chartjs-bundle.generated.ts`)
 - **Publish**: `prepublishOnly` runs `build`, `files: ["dist"]` in package.json
 - **Shebang**: `#!/usr/bin/env node`, preserved by tsup
 - **Test**: `vitest`
@@ -155,13 +157,14 @@ commit-insights/
 │   ├── extract/
 │   │   ├── index.ts              # re-exports
 │   │   ├── gitLog.ts             # extractCommits()
-│   │   └── types.ts              # Commit, FileChange (parents: string[])
+│   │   └── types.ts              # Commit (parents: string[])
 │   ├── analyze/
+│   │   ├── index.ts              # analyzeCommits(), AnalysisResult
 │   │   ├── classify.ts           # conventional-commit type detection
 │   │   ├── tickets.ts            # ticket/issue ref extraction
 │   │   ├── timeline.ts           # monthly aggregation
 │   │   ├── areas.ts              # file/directory area mapping
-│   │   └── reviewers.ts          # Co-authored-by / Approved-by → collaborations counts
+│   │   └── reviewers.ts          # Co-authored-by / Approved-by / Reviewed-by → collaborations counts
 │   ├── ai/
 │   │   ├── providers/
 │   │   │   ├── types.ts          # AIProvider, AIError, Result, StatsPayload
@@ -177,12 +180,14 @@ commit-insights/
 │   │   └── prompts.ts            # buildPrompt(), audience variants
 │   ├── report/
 │   │   ├── templates/
-│   │   │   ├── dashboard.html.ts # template-literal HTML
 │   │   │   ├── chartjs-bundle.generated.ts  # generated, gitignored
 │   │   │   ├── chartConfigs.ts   # Chart.js config factory functions
 │   │   │   └── sections/         # pure (data) => string section functions
+│   │   ├── types.ts              # DashboardData interface
 │   │   ├── charts.ts             # data shaping for Chart.js
+│   │   ├── dashboard.html.ts     # template-literal HTML, assembleDashboard()
 │   │   ├── render.ts             # write dashboard.html
+│   │   ├── styles.ts             # CSS as template literal constant
 │   │   └── escape.ts             # escapeHtml(), jsonForScript()
 │   └── storage/
 │       └── cache.ts              # SQLite cache (commits: parents TEXT)
@@ -198,6 +203,11 @@ commit-insights/
 │   ├── areas.test.ts
 │   ├── analyze.test.ts
 │   ├── config.test.ts
+│   ├── cache.test.ts
+│   ├── escape.test.ts
+│   ├── report-dashboard.test.ts
+│   ├── report-sections.test.ts
+│   ├── chartConfigs.test.ts
 │   ├── cli-integration.test.ts   # --narrative / --strict CLI integration
 │   └── ai/
 │       ├── types.test.ts
