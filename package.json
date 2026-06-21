@@ -1,12 +1,20 @@
 {
   "name": "commit-insights",
   "version": "0.1.5",
+  "keywords": ["git", "commit-history", "contributions", "dashboard", "cli", "analytics", "visualization", "developer-tools", "git-stats", "report", "changelog", "productivity", "oss"],
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/hinedy/commit-insights.git"
   },
   "homepage": "https://github.com/hinedy/commit-insights#readme",
+  "bugs": {
+    "url": "https://github.com/hinedy/commit-insights/issues"
+  },
+  "author": {
+    "name": "hinedy",
+    "email": "ahmedhinedy@gmail.com"
+  },
   "description": "Generate a local git contribution dashboard from commit history",
   "type": "module",
   "engines": {

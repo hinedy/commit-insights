@@ -2,6 +2,10 @@
 
 Generate a local git contribution dashboard (static HTML) from your repo's commit history. Optional AI-written narrative summaries via BYOK/BYOM providers.
 
+<p align="center">
+  <video src="assets/preview.mp4" controls width="880"></video>
+</p>
+
 ## Prerequisites
 
 - Node.js >= 18

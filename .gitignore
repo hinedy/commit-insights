@@ -7,3 +7,4 @@ src/report/templates/chartjs-bundle.generated.ts
 dashboard.html
 .claude/
 .cursor/
+.mimocode/
