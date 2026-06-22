@@ -3,7 +3,7 @@
 Generate a local git contribution dashboard (static HTML) from your repo's commit history. Optional AI-written narrative summaries via BYOK/BYOM providers.
 
 <p align="center">
-  <video src="assets/preview.mp4" controls width="880"></video>
+  <video src="https://github.com/hinedy/commit-insights/raw/main/assets/preview.mp4" controls width="880"></video>
 </p>
 
 ## Prerequisites
@@ -27,9 +27,9 @@ open dashboard.html
 
 ## Privacy
 
-`commit-insights` makes zero external network calls unless you pass `--narrative`. The core dashboard (statistics, charts, tables) is generated entirely from your local git history. No data is collected, no telemetry, no analytics.
+`commit-insights` makes zero external network calls unless you pass `--narrative`. The core dashboard (statistics, charts, tables) is generated entirely from your local git history. No data is collected.
 
-When AI narratives are enabled (`--narrative`), only **aggregated statistics** (commit counts, type breakdowns, top tickets) are sent to the configured provider — never raw commit messages, diffs, or code.
+When AI narratives are enabled (`--narrative`), only **aggregated statistics** (commit counts, type breakdowns, top tickets) are sent to the configured provider — never raw commit messages, diffs, or file names.
 
 ## Usage
 
@@ -164,7 +164,7 @@ npm test
 
 ## Why not `git-insights`?
 
-The tool is named for **commits**, not git — it works on any repo's commit history regardless of VCS, and the name avoids implying it covers all git operations (blame, reflog, etc.). The scope is contribution insight, not git insight.
+The tool is named for **commits**, not git — it works on any repo's commit history regardless of VCS, and the name avoids implying it covers all git operations (blame, reflog, etc.). The scope is commits and contribution patterns.
 
 ---
 
