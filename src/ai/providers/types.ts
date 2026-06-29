@@ -14,14 +14,22 @@ export interface AIProvider {
   generate(prompt: string): Promise<Result<{ text: string }, AIError>>;
 }
 
+export interface TicketSummary {
+  id: string;
+  commits: number;
+  themeWords: string[];
+}
+
 export interface StatsPayload {
+  repoName: string;
   totalCommits: number;
   dateRange: { from: string; to: string };
   totalAuthors: number;
   monthlyTimeline: { month: string; count: number }[];
   typeBreakdown: Record<string, number>;
-  topTickets: { id: string; count: number }[];
+  topTickets: TicketSummary[];
   ticketCommitCount: number;
   topReviewers: { name: string; collaborations: number }[];
+  themeWords: string[];
 }
 

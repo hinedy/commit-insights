@@ -15,6 +15,8 @@ export interface AnalysisResult {
   areas: Map<string, string>;
   areaCounts: Record<string, number>;
   reviewers: ReviewerStat[];
+  totalCommits: number;
+  totalAuthors: number;
 }
 
 export function analyzeCommits(
@@ -39,5 +41,7 @@ export function analyzeCommits(
     areas: commitAreaMap,
     areaCounts,
     reviewers,
+    totalCommits: commits.length,
+    totalAuthors: new Set(commits.map((c) => c.authorEmail)).size,
   };
 }

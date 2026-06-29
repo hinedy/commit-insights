@@ -16,6 +16,8 @@ describe("analyzeCommits", () => {
     expect(result.areas).toBeInstanceOf(Map);
     expect(result.areaCounts).toEqual({});
     expect(result.reviewers).toEqual([]);
+    expect(result.totalCommits).toBe(0);
+    expect(result.totalAuthors).toBe(0);
   });
 
   it("derives areaCounts from areaMap", () => {
@@ -33,5 +35,18 @@ describe("analyzeCommits", () => {
     const result = analyzeCommits(commits, { ticketPattern: /[A-Z]+\d+/g }, areaMap);
 
     expect(result.areaCounts).toEqual({ Backend: 2, Frontend: 1 });
+  });
+
+  it("reports totalCommits and totalAuthors from input", () => {
+    const commits: Commit[] = [
+      c({ hash: "a", authorEmail: "alice@example.com" }),
+      c({ hash: "b", authorEmail: "alice@example.com" }),
+      c({ hash: "c", authorEmail: "bob@example.com" }),
+    ];
+
+    const result = analyzeCommits(commits, { ticketPattern: /[A-Z]+\d+/g }, new Map());
+
+    expect(result.totalCommits).toBe(3);
+    expect(result.totalAuthors).toBe(2);
   });
 });

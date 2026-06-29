@@ -62,4 +62,26 @@ describe("extractTickets", () => {
 
     expect(result.perCommit[0].tickets).toEqual(["MEDX-123"]);
   });
+
+  describe("groups", () => {
+    it("groups commits by ticket ID", () => {
+      const c1 = c({ hash: "a", subject: "MEDX-123 fix" });
+      const c2 = c({ hash: "b", subject: "MEDX-123 refactor" });
+      const c3 = c({ hash: "c", subject: "MEDX-456 add" });
+
+      const result = extractTickets([c1, c2, c3], DEFAULT_PATTERN);
+
+      expect(result.groups.get("MEDX-123")).toEqual([c1, c2]);
+      expect(result.groups.get("MEDX-456")).toEqual([c3]);
+    });
+
+    it("single commit referencing multiple tickets appears in each group", () => {
+      const c1 = c({ hash: "a", subject: "MEDX-123 and MEDX-456" });
+
+      const result = extractTickets([c1], DEFAULT_PATTERN);
+
+      expect(result.groups.get("MEDX-123")).toEqual([c1]);
+      expect(result.groups.get("MEDX-456")).toEqual([c1]);
+    });
+  });
 });
