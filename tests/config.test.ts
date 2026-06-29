@@ -25,7 +25,9 @@ describe("config system", () => {
   });
 
   it("returns defaults when no config files present", () => {
-    const { config } = loadEffectiveConfig(dir);
+    const { config } = loadEffectiveConfig(dir, undefined, {
+      userConfigPath: join(dir, "no-such-file.json"),
+    });
     expect(config.ai).toEqual({});
     expect(config.areas).toEqual({});
     expect(config.ticketPattern).toBe("[A-Z][A-Z0-9]*-\\d+");
@@ -39,7 +41,9 @@ describe("config system", () => {
       join(dir, ".commit-insights.json"),
       JSON.stringify({ ai: { provider: "ollama" } }),
     );
-    const { config } = loadEffectiveConfig(dir);
+    const { config } = loadEffectiveConfig(dir, undefined, {
+      userConfigPath: join(dir, "no-such-file.json"),
+    });
     expect(config.ai.provider).toBe("ollama");
   });
 
@@ -111,7 +115,9 @@ describe("config system", () => {
   });
 
   it("ignorePaths defaults to empty array when not set", () => {
-    const { config } = loadEffectiveConfig(dir);
+    const { config } = loadEffectiveConfig(dir, undefined, {
+      userConfigPath: join(dir, "no-such-file.json"),
+    });
     expect(config.ignorePaths).toEqual([]);
   });
 
@@ -129,9 +135,11 @@ describe("config system", () => {
       join(dir, ".commit-insights.json"),
       JSON.stringify({ ai: { provider: "ollama" } }),
     );
-    const { provenance } = loadEffectiveConfig(dir, {
-      ai: { model: "llama3" },
-    });
+    const { provenance } = loadEffectiveConfig(
+      dir,
+      { ai: { model: "llama3" } },
+      { userConfigPath: join(dir, "no-such-file.json") },
+    );
     expect(provenance["ai.provider"].layer).toBe("repo");
     expect(provenance["ai.model"].layer).toBe("cli");
     expect(provenance["ticketPattern"].layer).toBe("defaults");

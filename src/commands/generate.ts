@@ -12,6 +12,7 @@ import { renderDashboard } from "../report/render.js";
 import { CHART_JS } from "../report/templates/chartjs-bundle.generated.js";
 import { createProvider } from "../ai/providers/index.js";
 import { generateNarrative } from "../ai/narratives.js";
+import { toStatsPayload } from "../ai/statsPayload.js";
 
 export function registerGenerateCommand(program: Command): void {
   program
@@ -123,6 +124,8 @@ export function registerGenerateCommand(program: Command): void {
           const analysis = analyzeCommits(commits, config, commitAreaMap);
           endPhase(t3);
 
+          const repoName = getRepoName(repoPath);
+
           let narrative: string | undefined;
           if (opts.narrative) {
               const aiConfig = config.ai;
@@ -136,22 +139,14 @@ export function registerGenerateCommand(program: Command): void {
                 if (opts.strict) process.exit(1);
               } else {
                 const t4 = startPhase("Generating narrative");
-                const authors = new Set(commits.map((c) => c.authorEmail));
                 const dates = commits.map((c) => c.date).filter(Boolean).sort();
-                const totalCommits = commits.length;
-                const narrativeText = await generateNarrative(provider, {
-                  totalCommits,
-                  dateRange: { from: dates[0] ?? "", to: dates[dates.length - 1] ?? "" },
-                  totalAuthors: authors.size,
-                  monthlyTimeline: analysis.timeline,
-                  typeBreakdown: analysis.classification.counts,
-                  topTickets: Object.entries(analysis.tickets.counts)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 15)
-                    .map(([id, count]) => ({ id, count })),
-                  ticketCommitCount: analysis.tickets.perCommit.filter((t) => t.tickets.length > 0).length,
-                  topReviewers: analysis.reviewers.slice(0, 10),
-                }, {
+                const period = { start: dates[0] ?? "", end: dates[dates.length - 1] ?? "" };
+                const payload = toStatsPayload(analysis, {
+                  repoName,
+                  period,
+                  allSubjects: commits.map((c) => c.subject),
+                });
+                const narrativeText = await generateNarrative(provider, payload, {
                   audience: opts.narrativeAudience,
                   length: opts.narrativeLength,
                 });
@@ -167,7 +162,7 @@ export function registerGenerateCommand(program: Command): void {
           }
 
           const t5 = startPhase("Building dashboard");
-          const data = buildDashboardData(analysis, commits, getRepoName(repoPath), narrative);
+          const data = buildDashboardData(analysis, commits, repoName, narrative);
 
           const chartJs = opts.cdnCharts ? "" : CHART_JS;
           const outputPath = resolve(opts.out);

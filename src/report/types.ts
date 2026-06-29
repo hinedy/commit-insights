@@ -1,6 +1,8 @@
+import type { Period } from "../types";
+
 export interface DashboardData {
   repoName: string;
-  period: { start: string; end: string };
+  period: Period;
   totals: { commits: number; tickets: number; authors: number };
   timeline: Array<{ month: string; count: number }>;
   typeCounts: Record<string, number>;
