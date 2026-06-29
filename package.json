@@ -1,7 +1,21 @@
 {
   "name": "commit-insights",
-  "version": "0.1.5",
-  "keywords": ["git", "commit-history", "contributions", "dashboard", "cli", "analytics", "visualization", "developer-tools", "git-stats", "report", "changelog", "productivity", "oss"],
+  "version": "0.1.6",
+  "keywords": [
+    "git",
+    "commit-history",
+    "contributions",
+    "dashboard",
+    "cli",
+    "analytics",
+    "visualization",
+    "developer-tools",
+    "git-stats",
+    "report",
+    "changelog",
+    "productivity",
+    "oss"
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
